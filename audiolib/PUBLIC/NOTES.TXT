@@ -1,0 +1,1713 @@
+
+                             Apogee Sound System
+
+                                Version 1.09
+
+                                 by Jim Dos‚
+
+                                Revision notes
+
+When your game is in beta, you must fax me your beta reports with sound
+problems since I will not see them otherwise.
+
+Please be sure to include my name in the credits for your program.  I'm
+not asking for a design or game programming credit, just credit for the
+sound system.  This includes the credits screen, the manual, and the
+text files accompanying the game (if the credits for the game are listed
+in them).  Thank you.
+
+NOTE: make sure that you unzipped the zip file using the "-d"
+parameter.  This will create some directories that the demo needs.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           Known problems:                                 ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+- GUS may crash on systems with a VMM since the GUS code does not lock
+  any of its allocated memory.
+
+- GUS only supports IRQs below 8.  At higher IRQs, the dos extender seems
+  to be too slow.
+
+- PAS mixer does not have a linear sounding volume change.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                             To-do list:                                   ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+- Add support for playback of stereo sounds.  If anyone needs this
+  right away, let me know.
+- Add permanant debugging code to various modules.
+- If an error occurs loading a patch file, GUS code should return
+  which file it is.
+- Finish this doc file.  Music functions have to be documented using the
+  new format.
+- Change current limit of one upper IRQ.
+- Get upper IRQ's working for GUS code.
+- Lock memory in GUS code.
+- Test code on OS/2 and Windows
+- Lookup table for PAS mixer for more linear volume change.
+- MOD music playback.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                          Revision History:                                ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+5/14/96
+
+- Version 1.12
+- Fixed a reverb bug where 8-bit fast reverb would round down to -infinity
+  instead of 0.  This caused a bit of noise since the mix buffer would
+  only reduce down to -1 and 0.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+5/10/96
+
+- Version 1.11
+- added function FX_EndLooping to break a looping sound out of its loop.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+1/16/96
+
+- Modified Maketmb to chop off bits not relevant to OPL2 cards.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+1/8/96
+
+- Version 1.09
+- ***** IMPORTANT *****
+  Any code that is called by the sound system should be compiled with
+  the -zu option.  This tells the compiler to assume that SS is not
+  equal to DS.  This is required for any code that's called from the
+  sound system while it's in an interrupt (I switch to a custom stack
+  upon entering the interrupt).  Any function that is used with
+  TS_ScheduleTask or FX_SetCallBack should be compiled this way (you may
+  want to put them in a separate module.  I recommend doing this for
+  USRHOOKS functions as well, in case you free a task from within a timer
+  function (MUSIC_FadeVolume does this, so if you use it, USRHOOKS must
+  be compiled with -zu).
+
+- The sound system now uses the ULTRAMID.INI in the current directory if
+  it exists, otherwise it uses the one pointed to by the ULTRADIR environment
+  variable.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+1/4/96
+
+- Fixed a bug with fast 8-bit reverb.  Also made a few optimizations to
+  it.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+12/18/95
+
+- Version 1.08
+- I'm a dumbass.  I left a "strcat( InstrumentDirectory, name );"
+  after locating the ULTRAMID.INI file for the Gravis Ultrasound.  So
+  if you  haven't been able to initialize music in a while, you know
+  who's to blame. :)
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+12/12/95
+
+- New utility called PS.  Allows you to test a WAV, VOC, or raw sound
+  file from the command line using the sound system.  Check in the
+  PS directory for the source code.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+12/8/95
+
+- Version 1.07
+- Added adjustable delay on the reverb.  The following functions allow
+  you to manipulate the delay setting.
+
+  int   FX_GetMaxReverbDelay( void );
+  int   FX_GetReverbDelay( void );
+  void  FX_SetReverbDelay( int delay );
+
+  The delay is measured in the number of samples to delay before the
+  sound is regenerated.  To calculate the delay in seconds, just do this:
+  seconds = delay / mixingrate; (using floats, obviously).  The minimum
+  delay is 256 samples.  The maximum depends on whether you're doing
+  16 bit or 8 bit, and stereo or mono mixing.  Use FXGetMaxReverbDelay
+  to get the maximum (after the FX_Init has been called).  In 8-bit mono,
+  the delay is about 1/2 of a second.  The maximum delay is constrained
+  by the size of the buffer I allocate to mix the sound in.  If anyone
+  wants longer delays, let me know and I can increase the buffer size
+  for you (I'd probably make it adjustable by you).
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+12/6/95
+
+- 18 voice FM music on OPL3 cards.
+- FM music is no longer limited to MIDI channels 1 through 10.  For
+  backward compatability sake, the function MUSIC_SetMaxFMMidiChannel
+  can be used to limit it, but why would anyone want to do that?
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+11/13/95
+
+- Fixed a bug with Adlib music where the default pitch bend range was
+  set too low.  Thanks Peter!
+- 1.06a library upload.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+11/7/95
+
+- 1.06 update.  Time sure flies...
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+8/21/95
+
+- 1.05 update.
+- Full EMIDI support.
+- Context sensitive music through EMIDI.
+- Added the ability to fastforward to a specific beat/measure or time
+  in a song.
+- GUSMIDI.INI file no longer required (this may return, we're still debating).
+- Probably a few other things that I can't think of right now.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+7/24/95
+
+- Changed GUS code to use software mixing instead of hardware mixing.
+  GUS purists will hate me (if they found out), but it makes a lot more
+  sense this way since I only have to maintain one playback method, plus
+  it allows GUS owners to hear reverb and gives better control over panning.
+  There may be other benefits, but I can't think of them right now.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+5/31/95
+
+- Playback of 16-bit digitized sound now supported.  Source data must
+  be signed data.  Still need to do GUS version, but I'm uploading it for
+  Jason Blochowiak.
+- Reverb code rewritten in assembly.  Still needs to be fine-tuned.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+5/25/95
+
+- Using "option eliminate" with the sound library should no longer crash
+  the linker.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+5/8/95
+
+- Added some new functions:
+
+     void FX_SetReverseStereo( int setting );
+     int  FX_GetReverseStereo( void );
+     void FX_SetReverb( int reverb );
+     void FX_SetFastReverb( int reverb );
+
+  FX_SetReverseStereo and FX_GetReverseStereo allow you to swap the left
+  and right channel volumes for people whose speakers are reversed.  Zero
+  is no swap, non-zero swaps channels.
+
+  FX_SetReverb and FX_SetFastReverb set the amount of echo to mix into
+  the sound.  It's a very mechanical sounding echo, kind of like the spring
+  reverb on guitar amps.  The effect is much like the echo effects in
+  Super Mario World on the SNES.
+
+  FX_SetReverb accepts values from 0 to 255. 0 means no reverb and 255
+  is 100% reverb (sound repeats infinitely).  Values above 96 are probably
+  overkill.  Speedwise, reverb costs about as much as one sound effect.
+
+  FX_SetFastReverb uses a bitwise shift instead of table lookup to scale
+  the volume of the echo.  A value of 0 is no echo, 1 is echo at half
+  volume (equivalent to 128 with FX_SetReverb), 2 to 1/4 volume
+  (equivalent to 64), etc.  If you're not doing dynamic changes in reverb,
+  this may be preferable since it's a bit faster.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+4/7/95
+
+- void MUSIC_RegisterTimbreBank( unsigned char *timbres );
+
+  Added the function MUSIC_RegisterTimbreBank to allow developers to use
+  their own FM timbres on Sound Blaster and Adlib compatibles.  Use the
+  supplied utility MAKETMB to create data files using a script and IBK
+  files.  The resulting file can be loaded by the program at runtime and
+  a pointer to it passed to MUSIC_RegisterTimbreBank.  Afterwards, the
+  memory can be deallocated (the audio library copies the supplied timbres
+  over the default timbres.
+
+  If you decide to use your own timbres, I can recommend a good shareware
+  program that helps you to create them.  Just give me a call.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+3/17/95
+
+- Finished looping functions.  Here is how to loop a sample:
+
+  For a raw sample, use FX_PlayLoopedRaw.  Here is it's definition:
+
+     int FX_PlayLoopedRaw
+        (
+        char          *ptr,
+        unsigned long  length,
+        char          *loopstart,
+        char          *loopend,
+        unsigned       rate,
+        int            pitchoffset,
+        int            vol,
+        int            left,
+        int            right,
+        int            priority,
+        unsigned long  callbackval
+        );
+
+     ptr is a pointer to the start of the sample.  It can actually be
+  later in the sample than the start of the loop.  This is usefull for
+  MOD players which may start a sample at an offset into the sound.
+
+     length is the number of samples to play before the loop begins.  In
+  most cases, this will be ( loopend - ptr ).  It may seem strange to be
+  able to play past the end of the loop on the first time through the
+  sound, but it's the most flexible.
+
+     loopstart is a pointer to the start of the loop.  The can be before
+  or after the start of the sample.
+
+     loopend is a pointer to the end of the loop.  This points to the last
+  sample to play in the loop.
+
+  For a WAV file, use FX_PlayLoopedWAV.
+
+     int FX_PlayLoopedWAV
+        (
+        char *ptr,
+        long  loopstart,
+        long  loopend,
+        int   pitchoffset,
+        int   vol,
+        int   left,
+        int   right,
+        int   priority,
+        unsigned long callbackval
+        );
+
+     ptr is the start of the WAV file.  WAV files currently do not have
+  the flexibility that raw files do, in that the sound must start at the
+  beginning of the WAV file.  All looping is based past the beginning of
+  the WAV file.  The sound will loop after the sample pointed to by
+  loopend.
+
+     loopstart is the offset (not pointer) of the sample to begin the loop
+  on.  This must be a positive value.  Any negative values or values past
+  the end of the sound will cause the WAV to only play once.
+
+     loopend is the offset (not pointer) of the sample to end the loop on
+  (the sample will loop after this sample is played).  If the offset is
+  past the end of the sample, the loop end will be set to the last sample
+  in the file.
+
+  For a VOC file, use FX_PlayLoopedVOC.
+
+     int FX_PlayLoopedVOC
+        (
+        char *ptr,
+        long  loopstart,
+        long  loopend,
+        int   pitchoffset,
+        int   vol,
+        int   left,
+        int   right,
+        int   priority,
+        unsigned long callbackval
+        );
+
+     ptr is the start of the VOC file.  VOC files currently do not have
+  the flexibility that raw files do, in that the sound must start at the
+  beginning of the VOC file.  All looping is based past the beginning of
+  the VOC file.  Since VOC files can contain multiple blocks of data,
+  looping samples will only play the first block of data.
+
+     loopstart is the offset (not pointer) of the sample to begin the loop
+  on.  This must be a positive value.  Any negative values or values past
+  the end of the sound will cause the VOC to play normally.
+
+     loopend is the offset (not pointer) of the sample to end the loop on
+  (the sample will loop after this sample is played).  If the offset is
+  past the end of the sample, the loop end will be set to the last sample
+  in the file.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+3/16/95
+
+- I have changed the names of the two functions for playing VOCs.  It just
+  no longer makes sense to call them PlaySound when there are a variety of
+  file formats supported.
+
+  Here's an updated list of functions that play digitized sound:
+
+  FX_PlayRaw       : Plays raw sampled data once
+  FX_PlayLoopedRaw : Plays raw sampled data with looping
+  FX_PlayWAV       : Plays a WAV file once
+  FX_PlayLoopedWAV : Plays a WAV file with looping
+  FX_PlayVOC3D     : Plays a VOC file once using '3D' panning
+  FX_PlayVOC       : Plays a VOC file once
+  FX_PlayLoopedVOC : Plays a VOC file with looping
+
+  I'm thinking about moving the '3D' routines out of the library since
+  they are really just panning tables.  This way, users could create their
+  own method.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+3/15/95
+
+- Increased the reported maximum number of voices you can play on some cards
+  to 32.  Since all voice tables are dynamically allocated, you could have
+  more, but anything beyond 16 is a bit ridiculous.  The Gravis Ultrasound
+  is limited to 24 currently, and any voices used for sound fx leaves fewer
+  voices for music.  In any case, 8 voices is the recommended maximum, but
+  if you have reason to use more, go ahead.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+3/14/95
+
+- Added special routines optimized to mix only 1 channel into stereo.
+  Whenever the volume of the left or the right channel is zero for a
+  voice, only one channel is mixed.  This is especially useful if you
+  intend to play a sound with the left and right channels' frequencies are
+  slightly different.  Peter Freese (from Q Studios, who are developing
+  Blood) needs to do this for his Sonic Holography 3D sound library that
+  he is developing.
+
+- Fixed a problem on the Sound Source.  I noticed that pitches were higher
+  than normal on the Sound Source, and discovered that it was possible to
+  overflow the FIFO buffer without causing the overflow flag to be set.
+  Since the Sound Source can only play sound at 7khz, I must poll the
+  port to see if it's ready for sound.  The overflow flag sometimes doesn't
+  register imediatly, so I changed my routine to write only 14 samples at
+  a time to the port.  This causes the pitch to be nearly 7khz.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+3/13/95
+
+- Increased the resolution of the volume levels that digitized sounds can
+  play from 16 to 64.  Since the volumes were passed in as 0 to 255, there
+  is no need for users to change any code to take advantage of this.
+  Although this requires more memory (in 16bit mode, 32k as opposed to 8k),
+  it means smooth volume changes and allows for MOD playback.
+
+- Added new function for changing pitch: FX_SetFrequency.  This allows you
+  to change the rate that a sound is mixed at.  This isn't very usefull for
+  VOC playback since the VOC file can override the rate, it is very usefull
+  for playback of raw data since you will already know the sampling rate.
+  This is also usefull for MOD playback.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+3/10/95
+
+- Added embedded looping commands for MIDI files.  To loop a specific
+  track, use controller 116 on any MIDI channel on that track with a value
+  of 0 for infinite, or > 0 for the number of times to loop.  To mark the
+  end of a loop, use controller 117 with a value of 127.  NOTE: Currently,
+  you must put loop info on all tracks to if you want all of them to loop.
+  This may seem like a pain at first, but I thought that it would give
+  the musician extra flexibility.  If no one likes this, I'll change it so
+  that you only have to do one loop controller.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+3/9/95
+
+- Added support for .WAV files and raw samples.
+- Added two new functions allowing the programmer to control the relative
+  volume of each MIDI channel of a song.  Use MUSIC_SetMidiChannelVolume
+  to set the volume of a MIDI channel and MUSIC_ResetMidiChannelVolumes
+  to restore all channels to full volume.  I do not reset the volumes
+  when you play a new song so that you can set the volume of all the
+  channels before playing a song.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+2/14/95
+
+- Found a potential bug where the pitch scaling function could go outside
+  of the array bounds given certain pitch offsets.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+2/4/95
+
+- Stereo FM temporarally commented out for ROTT.  Seems to take too long on
+  some computers and causes the mouse driver to miss interrupts.
+  Have to contact Creative Labs to find out which chips have fast timings.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+2/3/95
+
+- Added FX_VoiceAvailable.  Checks if a voice can be played at the
+  specified priority.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+1/30/95
+
+- Version 1.02 uploaded for all current developers.
+
+- Various initialization routines improved.
+
+- Now performs checks to see if DMA and IRQ are working.
+
+- Added the ability to do custom Sound Blaster setup.  Now users can enter
+  the DMA, card address, and IRQ.
+
+- Fixed problem with SB16 and Sound Canvas Daughterboard.  This was
+  caused by an undocumented IRQ disable flag in the SB16.
+
+- GUS initialization no longer bombs if all the patches in GUSMIDI.INI
+  could not be loaded.  I was forced to do this due to the problems
+  that can be caused by a slight error in the patch list.  Gravis has changed
+  the patch sizes over several versions making it difficult to create a patch
+  list that works on all cards.  Since the last patches loaded are percussion,
+  these are the ones that will be affected.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+1/11/95
+
+- Additive timbres now respond to volume changes.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+1/7/95
+
+- Added better error checking and detection for AWE32.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+1/4/95
+
+- Version 1.01 uploaded for all current developers.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+12/20/94 - Version 1.01
+
+- Version built for Rise of the Triad.
+
+- Fixed some problems with MIDI playback on SoundScape.  It was
+  missing program changes (instruments).
+
+- GUS uses GUSMIDI.INI in local directory instead of ULTRAMID.INI.
+  This is so that a custom patch list could be included with your
+  game.  If you own a GUS, copy the file ULTRAMIDI.INI from your
+  ULTRASND\MIDI directory.  I will come up with something more
+  convenient in the future.
+
+- When command line parameter "ASSVER" used, the library returns
+  an error when initialized.  The error string will contain the
+  version text.  This was done so that your programs could perform
+  their normal shutdown procedure before exiting to DOS.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+12/15/94
+
+- Optimized mixing routines.  50% increase in 8-bit mono and stereo
+  playback and 20%-30% increase in 16-bit playback.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+11/28/94
+
+- Pitch tables are now linked in rather than generated at startup.
+  This gets rid of any floating point code.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+11/14/94
+
+- Added function FX_SoundsPlaying to report the number of voices
+  playing.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+11/13/94
+
+- Fixed problem with SoundScape where it wasn't reporting the MaxBits
+  and MaxVoices properly.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+11/6/94 - Version 1.00
+
+- SoundScape now automatically gets MIDI port address from SNDSCAPE.INI.
+
+- WaveBlaster now automatically gets MIDI port address from the BLASTER
+  environment string.
+
+- TaskMan now locks the link list manager's memory in case FX_Init
+  and MUSIC_Init are not called.
+
+- All developers must make sure that they ask for the midi port on the
+  following cards: GenMidi, and SoundCanvas.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+11/5/94
+
+- Made the GUSWAVE play voice routine allocate voice with a priority of
+  0, which tells gf1_play_digital to not attempt voice stealing.  This
+  prevents the music playback from stealing sound fx voices and was
+  the source of the bug in Boppin' where voices would be cutoff.
+
+- VOC decoder now deals with block type 8 properly.  Bug caused it to be
+  ignored.
+
+- GUS set volume function now sets volume of all playing voices.  Before,
+  it would only set the volume for new voices.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+10/31/94
+
+- Now keeping track of version number.  From any game that uses the
+  sound system, you can type "ASSVER" to get version number.
+
+- Added command line parameter "DEBUGGUS" to Gravis Ultrasound GUSWAVE
+  to help track down a voice dropout problem.  I'll eventually add similar
+  parameters to other modules.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+10/26/94
+
+- Added native support for the Ensoniq SoundScape.  This card is capable
+  of playing 8 and 16 bit stereo or mono data and uses wavetable synthesis
+  for music.  Please add this to your config.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+10/23/94
+
+- Did some optimizing and found that for 16-bit mixing it is slightly
+  quicker to use code to do harsh clipping than to use tables.  This
+  gets rid of a 64k lookup table I had.  With 8-bit sound, it is quicker
+  to use a table, but it only takes up 512 bytes.
+
+  Here is the various mixing modes in order of fastest to slowest:
+      8-bit mono, 16-bit mono, 8-bit stereo, 16-bit stereo.
+
+  Just for reference, 8-bit mono is only about 40% faster than 16-bit
+  stereo.  And considering that at 11khz, mixing is only called about
+  10 times a second, it's not an incredible difference.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+10/20/94
+
+- Fixed the PAS slowdown bug.  DMA channel was not being disabled after
+  a PCM transfer.  On some computers with PAS-16s, when the DMA circuitry
+  in the PAS was turned off, it left the DRQ line on the DMA in a floating
+  state, causing the DMA to do a continuous burst transfer, which would
+  slow down the computer.  This would not happen on other cards, since
+  their DMA circuitry is always active.
+
+- Fixed the WaveBlaster bug.  Bug caused by a problem with playing
+  WaveBlaster music and Sound Blaster-16 that is completely undocumented
+  in Creative Labs' developer kits.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+10/4/94
+
+- Added several new cards to enum list in SNDCARDS.H.  Unless you use all
+  of these, you are not supporting all sound cards----PUT THEM IN!
+- AWE32 support for General MIDI.
+- Midi callback system for implimenting digital drums and other music-
+  synced events.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+9/7/94
+
+- All interrupt service routines now allocate their own 1024 byte stack
+  in case Windows or OS/2 don't leave enough stack space.  This was
+  suggested by Steve Lepisto (Accursed Toys) who kindly supplied example
+  code.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+9/6/94
+
+- PC speaker sound fx can now be turned off by setting the volume to 0.
+- Turned off panning on the FM rhythm channel.
+- Found and fixed another FM panning bug.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+9/2/94
+
+- Added ability to reroute data from a MIDI channel to a user function.
+  Good for digital drums or animation synced to music.
+- Fixed a problem on the GUS with instruments that use tremelo.  Only
+  showed up when volume was set to 0.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+9/1/94
+
+- Fixed the high volume notes on GUS.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+8/26/94
+
+- Ummm, added revision notes!  What follows is what I've added in the
+  past few weeks.
+- Locked down memory on all cards except GUS.
+- Support for higher IRQ's on PAS and Sound Blaster.  Requires Dos4gw Pro
+  version 1.97.
+- Internal support for PAS mixer control (using MVSOUND.SYS).  Requires
+  Dos4gw Pro version 1.97.
+- FM pan position defaulted to full left.  Only noticable if midi file
+  didn't set its own pan positions.  Now defaults to center.
+- Added stereo panning on FM music.
+- Added stereo detuning on FM music.
+- Added harsh clipping so that digitized sounds playback at same volume
+  no matter how many voices are allocated.  Could distort when many sounds
+  are playing, but that's the price you pay.
+- Changed panning from sine tables to a linear attenuation ramp as you
+  deviate from center.
+- GUS can now choose number of voices to use (used to be 8 no matter what).
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                            Header files:                                  ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+There are four header files that you'll need: TASK_MAN.H, SNDCARDS.H,
+MUSIC.H and FX_MAN.H.  MUSIC.H contains all functions that control music.
+FX_MAN.H contains all functions for control of digitized and synthesized
+sound.  SNDCARDS.H contains sound card definitions and is brought in by
+MUSIC.H and FX_MAN.H.  TASK_MAN.H is a module used for timer management.
+
+SNDCARDS.H defines the following enumerated type:
+
+   typedef enum
+      {
+      SoundBlaster,
+      ProAudioSpectrum,
+      SoundMan16,
+      Adlib,
+      GenMidi,             <--- Requires midi port
+      SoundCanvas,         <--- Requires midi port
+      Awe32,
+      WaveBlaster,
+      SoundScape,
+      UltraSound,
+      SoundSource,
+      TandySoundSource,
+      PC,
+      NumSoundCards
+      } soundcardnames;
+
+These are used to select which card to use when initializing the routines.
+Do not use hard coded values since the value of these cards may change
+in future versions of the library.  NumSoundCards is simply to identify
+how many cards are supported (since support for more cards may be added
+in the future).
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                              Functions:                                   ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+In the functions that follow, TRUE is assumed to be the value returned by
+the expression ( 1 == 1 ) and FALSE is assumed to be the value returned
+by the expression ( !TRUE ).  Using macros, you could define them this
+way:
+
+   #define TRUE   ( 1 == 1 )
+   #define FALSE  ( !TRUE )
+
+This method is used because it makes no assumptions on the value of the
+boolean expressions when they are evaluated by the compiler.
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           Sound Effects:                                  ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+The following cards will be supported for sound effects: SoundBlaster,
+ProAudioSpectrum, UltraSound, SoundSource, TandySoundSource, AWE32,
+SoundMan16, and the PC speaker.
+
+Functions that return an error status will return one of the following:
+FX_Ok (if the function was successfull), FX_Error (if an error occurred),
+or FX_Warning (if a non-critical error occurred).
+
+The number of the last error or warning is stored in the global variable
+FX_ErrorCode.  Whether an error is worth exiting for is up to you.  Check
+out the names of the possible errors in the header file.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_ErrorString
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   char *FX_ErrorString( int ErrorNumber );
+
+Description:
+
+   The FX_ErrorString function maps the error number contained
+   in ErrorNumber to a string describing the error.
+
+   ErrorNumber can be the number of any error.  If ErrorNumber is
+   set to FX_Error or FX_Warning, FX_ErrorString will return the
+   string corresponding with the last error that occurred.
+
+Returns:
+
+   The FX_ErrorString function returns a pointer to the error message.
+   This string of data should not be modified by the program.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_SetupCard
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_SetupCard( int SoundCard, fx_device *device );
+
+Description:
+
+   The FX_SetupCard function is used to detect a sound card and
+   get information on what the card can do.
+
+   SoundCard:
+      This is an int passed into the function and corresponds
+      to the enumerated list of cards.
+
+   device:
+      This is the address of the data structure to store information
+      about the card.
+
+   Here is the definition of fx_device:
+
+   typedef struct
+      {
+      int   MaxVoices;
+      int   MaxSampleBits;
+      int   MaxChannels;
+      } fx_device;
+
+   MaxVoices:
+      This is the recommended maximum number of digitized sound
+      that can be played at once.  4 voices is adequate for most games,
+      although 8 voices is great for games that have a lot of atmosphere
+      sounds (like 3D games).  You should offer an option to select the
+      number of voices to use for people with slower machines.
+
+   MaxSampleBits:
+      This will be either 8 or 16, depending on whether you have an
+      8-bit or 16-bit sound card.  The routines only support playback
+      of 8-bit samples, but can mix them as 16-bit.  This provides better
+      quality sound, especially at low volumes, however it is slower since
+      you have twice as much data to mix.  You might want to offer this
+      as an option to people with slower machines.
+
+   MaxChannels:
+      This will be 1 if you have a mono card and 2 if you have a stereo
+      card.  Again, offer this as a choice in case the user has a slow
+      machine.  If you are not using the panning capabilities of the
+      sound system, choose mono sound since there would be no benefit
+      in using stereo.
+
+Returns:
+
+   The FX_SetupCard function will return FX_Ok if the sound card was
+   detected succesfully, and FX_Error if the card was not found or
+   could not be initialized.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_Init
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_Init( int SoundCard, int numvoices, int mixmode, int samplebits,
+      unsigned mixrate );
+
+Description:
+
+   The function FX_Init configures the sound engine by selecting the
+   sound card, the maximum number of sounds that can play, and whether
+   to mix the sound in 8 or 16 bits.
+
+   SoundCard:
+      This is an int passed into the function to select and corresponds
+      to the enumerated list of cards.
+
+   numvoices:
+      This is the number of digitized sound that can be played at once.
+
+   mixmode:
+      This is the number of channels to mix the sound into.  1 for mono,
+      2 for stereo.
+
+   samplebits:
+      This should be either 8 or 16, depending on whether sound should
+      be mixed in 8-bits or 16.
+
+   mixrate:
+      This selects the rate in hertz that sound should be mixed.
+
+
+Example:
+
+   int       status;
+   fx_device device;
+
+   status = FX_SetupCard( UltraSound, &device );
+   if ( status != FX_Ok )
+      {
+      printf( "%s\n", FX_ErrorString( status ) );
+      exit( 1 );
+      }
+
+   status = FX_Init( UltraSound, 8, 2, 16, 11000 );
+   if ( status != FX_Ok )
+      {
+      printf( "%s\n", FX_ErrorString( status ) );
+      exit( 1 );
+      }
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_Shutdown
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_Shutdown( void );
+
+Description:
+
+   The function FX_Shutdown ends use of the sound card and restores
+   any system resources that were used.  This should be called when
+   you exit to DOS, or when you change sound devices.
+
+Returns:
+
+   The function FX_Shutdown returns FX_Ok if it was succesfull in
+   shutting down the sound card and restoring resources.  Otherwise,
+   it returns FX_Error or FX_Warning.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_SetCallBack
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_SetCallBack( void ( *function )( unsigned long ) );
+
+Description:
+
+   The function FX_SetCallBack instructs the engine to call the
+   user-defined function when sounds stop playing.
+
+   function:
+      This is the function that the engine should call when a sound stops
+      playing.  The user-defined function should accept an unsigned long
+      as it's parameter.  The value passed to this function is a user-
+      defined value identifying the sound that just finished playing and
+      may be an actual pointer to a user-defined data structure.
+
+Returns:
+
+   FX_SetCallBack returns FX_Error or FX_Warning when the assignment
+   failed.  Otherwise it returns FX_Ok.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_SetVolume
+
+
+Synopsis:
+   #include "fx_man.h"
+   void FX_SetVolume( int volume );
+
+
+Description:
+
+   The function FX_SetVolume sets the total volume of sound
+   effects.
+
+   volume:
+      This is the volume to set the sound fx device to.
+      Valid volumes are from 0 to 255.
+
+Returns:
+
+   The function FX_SetVolume does not return a value.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_GetVolume
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_GetVolume( void );
+
+Description:
+
+   The FX_GetVolume function returns the total volume of the sound fx
+   device.
+
+Returns:
+
+   If an error occurs, FX_GetVolume returns FX_Warning or FX_Error,
+   otherwise it returns the total volume of sound effects.  Valid
+   volumes are from 0 to 255.
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           Playing Sounds:                                 ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+FX_PlaySound
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_PlaySound( char *ptr, int pitchoffset, int vol, int left,
+      int right, int priority, unsigned long callbackval );
+
+Description:
+
+   The function FX_PlaySound begins playback of digitized sound.
+   The sound data must be formated as a valid VOC sound file.
+
+   ptr:
+      This is the address to the VOC format sound data to be played.
+
+   pitchoffset:
+      This is the amount to transpose the pitch of the sound up or down
+      measured in 1/100th's of a semitone.  For example, to transpose
+      the pitch up one octave use 1200.  To transpose the pitch down
+      one octave use -1200.  For no transposition, use 0.
+
+   vol:
+      This is the volume of the sound in mono mode.  Valid values range
+      from 0 to 255.  Note: A volume of 0 does not always mean total
+      silence.
+
+   left:
+      This is the volume of the sound played through the left speaker in
+      stereo mode.  Valid values range is from 0 to 255.  Note: A volume
+      of 0 does not always mean total silence.
+
+   right:
+      This is the volume of the sound played through the right speaker
+      in stereo mode.  Valid values range from 0 to 255.  Note: A volume
+      of 0 does not always mean total silence.
+
+   priority:
+      This sets the order that sounds should be cancelled if a new sound
+      is played when no voices are available.  When this occurs, the
+      oldest sound with the lowest priority is replaced with the new
+      sound.  If the new sound's priority is lower than all the sounds
+      playing, then it will not be played.
+
+   callbackval:
+      This is the value that should be sent to the user-defined callback
+      function when the sound ends.  See FX_SetCallBack.
+
+
+Returns:
+
+   If an error occurs, FX_PlaySound returns FX_Error, or FX_Warning.
+   Otherwise, it returns a voice handle.  To determine if a return value
+   is a voice handle, check to see if it is greater than FX_Ok.  Valid
+   voice handles are always greater than FX_Ok.  The most common error
+   that can occur is when there are no voices and the new sound's
+   priority was too low.
+
+   The voice handle can be used later to stop the voice from playing or to
+   test if the voice is still playing.
+
+Example:
+
+   int voicehandle;
+
+   voicehandle = FX_PlaySound( address, pitchoffset, vol, left, right,
+      priority, callbackval );
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_Play3D
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_Play3D( char *ptr, int pitchoffset, int angle, int distance,
+      int priority, unsigned long callbackval );
+
+Description:
+
+   The function FX_Play3D begins playback of digitized sound.  The sound
+   data must be formated as a valid VOC sound file.
+
+   ptr:
+      This is the address to the VOC sound data to be played.
+
+   pitchoffset:
+      This is the amount to transpose the pitch of the sound up or down
+      measured in 1/100th's of a semitone.  For example, to transpose
+      the pitch up one octave use 1200.  To transpose the pitch down
+      one octave use -1200.  For no transposition, use 0.
+
+   angle:
+      This is the clockwise angle of the sound in relation to the player
+      from 0 to 31.  0 is center, 8 is full right, 16 is directly behind
+      the listener, and 24 is full left.
+
+   distance:
+      This is the distance of the sound from the player.  Valid values
+      range from 0 to 255, with 255 being the furthest from the player
+      (note: this does not mean silence on all cards).
+
+   priority:
+      This sets the order that sounds should be cancelled if a new sound
+      is played when no voices are available.  When this occurs, the
+      oldest sound with the lowest priority is replaced with the new
+      sound.  If the new sound's priority is lower than all the sounds
+      playing, then it will not be played.
+
+   callbackval:
+      This is the value that should be sent to the user-defined callback
+      function when the sound ends.  See FX_SetCallBack.
+
+
+Returns:
+
+   If an error occurs, FX_Play3D returns FX_Error, or FX_Warning.
+   Otherwise, it returns a voice handle.  To determine if a return value
+   is a voice handle, check to see if it is greater than FX_Ok.  Valid
+   voice handles are always greater than FX_Ok.  The most common error
+   that can occur is when there are no voices and the new sound's
+   priority was too low.
+
+   The voice handle can be used later to stop the voice from playing or to
+   test if the voice is still playing.
+
+Example:
+
+   int voicehandle;
+
+   voicehandle = FX_Play3D( address, pitchoffset, angle, distance,
+      priority, callbackval );
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_SetPan
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_SetPan( int handle, int vol, int left, int right );
+
+Description:
+
+   The function FX_SetPan sets the mono and stereo volumes of a
+   currently playing sound.  This can be used for sounds started
+   with FX_PlaySound or FX_Play3D.
+
+   handle:
+      This is the voice handle of the sound.  This is the value returned
+      by FX_PlaySound and FX_Play3D.
+
+   vol:
+      This is the volume of the sound in mono mode.  Range is from 0 to
+      255.  Note: A volume of 0 does not always mean total silence.
+
+   left:
+      This is the volume of the sound played through the left speaker
+      in stereo mode.  Range is from 0 to 255.  Note: A volume of 0
+      does not always mean total silence.
+
+   right:
+      This is the volume of the sound played through the right speaker
+      in stereo mode.  Range is from 0 to 255.  Note: A volume of 0
+      does not always mean total silence.
+
+Returns:
+
+   If the sound is no longer playing, FX_SetPan will return FX_Warning,
+   otherwise, it will return FX_Ok.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_Pan3D
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_Pan3D( int handle, int angle, int distance );
+
+Description:
+
+   The function FX_Pan3D sets the angle and the distance of a
+   currently playing sound in relation to the player.  This can
+   be used for sounds started with FX_PlaySound or FX_Play3D.
+
+   handle:
+      This is the voice handle of the sound.  This is the value
+      returned by FX_PlaySound and FX_Play3D.
+
+   angle:
+      This is the clockwise angle of the sound in relation to the player
+      from 0 to 31.  0 is center, 8 is full right, 16 is directly behind
+      the listener, and 24 is full left.
+
+   distance:
+      This is the distance of the sound from the player.  Valid values
+      range from 0 to 255, with 255 being the furthest from the player
+      (note: this does not mean silence on all cards).
+
+Returns:
+
+   If the sound is no longer playing, FX_Pan3D will return FX_Warning,
+   otherwise, it will return FX_Ok.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_SetPitch
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_SetPitch( int handle, int pitchoffset );
+
+Description:
+
+   The function FX_SetPitch sets the pitch of a currently playing sound.
+
+   handle:
+      This is the voice handle of the sound.  This is the value returned by
+      FX_PlaySound and FX_Play3D.
+
+   pitchoffset:
+      This is the amount to transpose the pitch of the sound up or down
+      measured in 1/100th's of a semitone.  For example, to transpose
+      the pitch up one octave use 1200.  To transpose the pitch down
+      one octave use -1200.  For no transposition, use 0.
+
+Returns:
+
+   If the sound is no longer playing, FX_SetPitch will return FX_Warning,
+   otherwise, it will return FX_Ok.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_SoundActive
+
+
+Synopsis:
+
+   #include "fx_man.h"
+   int FX_SoundActive( int handle );
+
+Description:
+
+   The function FX_SoundActive tests if the sound with the specified
+   handle is currently playing.
+
+   handle:
+      This is the voice handle of the sound to test.  This is the value
+      returned by FX_PlaySound and FX_Play3D.
+
+Returns:
+   FX_SoundActive returns TRUE if the sound is playing, otherwise it
+   returns FALSE.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int FX_StopSound( int handle );
+
+
+FX_StopSound stops playback of the sound with the associated handle.
+If the return value is not equal to FX_Ok, the sound was not found.
+
+handle is the voice handle of the sound.  This is the value returned by
+FX_PlaySound and FX_Play3D.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+FX_StopAllSounds
+
+
+Synopsis:
+   #include "fx_man.h"
+   int FX_StopAllSounds( void );
+
+Description:
+
+   The function FX_StopAllSounds halts output of all playing sounds.
+
+Returns:
+
+   FX_StopAllSounds returns FX_Warning or FX_Error if an error occured,
+   otherwise, it returns FX_Ok.
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           Music Playback:                                 ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+
+The following cards are supported for music: SoundBlaster, ProAudioSpectrum,
+Adlib, GenMidi, WaveBlaster, UltraSound, SoundMan16, Awe32, and SoundCanvas.
+TandSoundSource, SoundSource and PC are not supported.
+
+Similar error codes are returned for music as for sound effects.  The
+codes are MUSIC_Ok, MUSIC_Warning, and MUSIC_Error.  The last error that
+occurred is stored in MUSIC_ErrorCode.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+char *MUSIC_ErrorString( int ErrorNumber );
+
+
+Same as FX_ErrorString, except for music.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int MUSIC_Init( int SoundCard, int Address );
+
+
+MUSIC_Init select and initializes a sound card for music.  If the card
+is not detected or some error occured, it returns MUSIC_Error.
+
+Address is only used for General Midi and Wave Blaster.  It is the
+address of the MPU401 interface.  For other cards, just use 0.
+
+The two most common values are 0x330, and 0x300.  Doom and Raptor
+list other values, also.  To be on the safe side, you might want to
+support them also.  The other values are: 0x220, 0x230, 0x240, 0x250,
+0x300, 0x320, 0x330, 0x332, 0x334, 0x336, 0x340, 0x360.
+
+Incidently, I recommend doing your config files as text files with the
+extension ".INI".  This would allow people to manually enter certain
+settings.  I suggest the extension becuase people are familiar with it
+from Windows.  Check out the config file in Raptor sometime.
+
+Example:
+
+   status = MUSIC_Init( GenMidi, 0x330 );
+   if ( status != MUSIC_Ok )
+      {
+      printf( "Error - %s\n", MUSIC_ErrorString( MUSIC_Error ) );
+      exit( 1 );
+      }
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int MUSIC_Shutdown( void );
+
+
+Ends use of the selected music card.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+void MUSIC_SetVolume( int volume );
+
+
+
+Sets the total volume of music.  Valid volumes are from 0 to 255.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int  MUSIC_GetVolume( void );
+
+
+Returns the total volume of music.  Valid volumes are from 0 to 255.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int MUSIC_PlaySong( unsigned char far *song, int loopflag );
+
+
+MUSIC_PlaySong begins playback of the midi file pointed to by song.
+
+Set loopflag to MUSIC_PlayOnce to play the song once, or to
+MUSIC_LoopSong to play it continuously.  This is usefull for the Apogee
+fanfare music.
+
+Note: with MUSIC_PlayOnce, the song is simply paused at the end.  You
+can call MUSIC_Continue to start it again.  Although I stop playing songs
+when you call MUSIC_PlaySong again or MUSIC_Shutdown, I recommend you
+call MUSIC_StopSong when you are completly done.  I chose to do it this
+way becuase MUSIC_StopSong will cut off sound immediatly.  This allows the
+sounds to decay on their own before ending.
+
+Example:
+
+   status = MUSIC_PlaySong( SongPtr, MUSIC_LoopSong );
+   if ( status != MUSIC_Ok )
+      {
+      printf( "Error - %s\n", MUSIC_ErrorString( MUSIC_Error ) );
+      exit( 1 );
+      }
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+void MUSIC_SetLoopFlag( int loopflag );
+
+
+MUSIC_SetLoopFlag allows you to change the type of looping after a song
+is started.  This way, you can have the song end at the end of the song.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int MUSIC_StopSong( void );
+
+
+MUSIC_StopSong halts playback of the the current song.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+void MUSIC_Pause( void );
+
+
+MUSIC_Pause temporarily pauses playback of the song.  Use MUSIC_Continue
+to let the music continue.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+void MUSIC_Continue( void );
+
+
+MUSIC_Continue allows music to continue playing after a call to MUSIC_Pause
+or when the loopflag is set to MUSIC_PlayOnce and the song has finished.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int MUSIC_SongPlaying( void );
+
+
+MUSIC_SongPlaying tests if a songs is playing.  Calls to MUSIC_StopSong
+or MUSIC_Pause will cause this to send back FALSE.
+
+Example:
+
+   // Play the fanfare music
+   MUSIC_PlaySong( ApogeeFanfare, MUSIC_PlayOnce );
+
+   // Hang out while it's playing
+   while( MUSIC_SongPlaying() )
+      {
+      // Do nothing, or maybe check for a key.
+      }
+
+   // Stop the song when we're done
+   MUSIC_StopSong();
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           Fade Functions:                                 ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+
+These functions are provided for you to fade the music in and out.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int MUSIC_FadeVolume( int tovolume, int milliseconds );
+
+
+MUSIC_FadeVolume causes the volume of a song to gradually change to
+the specified volume.
+
+tovolume is the final volume the music should be at.
+
+milliseconds is the time, in milliseconds, in which to make the transition.
+Note: accuracy is only to 1/100 of a second.
+
+For example, to have the music fade in at the begining of a level :
+
+   // First, make sure we start at 0.
+   MUSIC_SetVolume( 0 );
+
+   // Start the song
+   MUSIC_PlaySong( Level1Music, MUSIC_LoopSong );
+
+   // Fade up to the level the user set the music at over a
+   // period of 4 seconds.
+   MUSIC_FadeVolume( UserSelectedVolumeLevel, 4000 );
+
+   PlayGame();
+
+   // At the end of the game or level, fade out over a period of 4 seconds.
+   MUSIC_FadeVolume( 0, 4000 );
+
+   while( MUSIC_FadeActive() )
+      {
+      // Hang around until fade is done
+      }
+
+   // Stop the song when we're done
+   MUSIC_StopSong();
+
+
+Note: Even if you fade the music volume to 0, the music is still playing.
+Remember to use MUSIC_StopSong() to end playback.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+void MUSIC_StopFade( void );
+
+
+MUSIC_StopFade is used if you want to stop the fade.  When called, the
+volume remains at the volume it had progressed to.  You don't need to
+call this function unless you have a reason to.  I use this internally
+and left it public in case someone needed it.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int MUSIC_FadeActive( void );
+
+
+MUSIC_FadeActive returns a flag stating if a fade is in progress.  This
+is useful if you want to wait until the music has faded out before doing
+something.
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           Timer Functions:                                ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+
+Since my routines depend heavily on the timer, I have to assume I own
+it.  To make it easy for you to do timing, I wrote Task_Man to handle
+all requests for the timer.
+
+To use Task_Man, you must include "Task_Man.h".
+
+Here's an example how to set up a simple counter running at 30 times
+per second:
+
+#include <stdio.h>
+#include "task_man.h"
+
+void TimeFunction( task *Task );
+
+// Here's our timer function.  It just increments a counter.
+void TimeFunction
+   (
+   task *Task
+   )
+
+   {
+   int *Count;
+
+   Count = Task->data;
+   ( *Count )++;
+   }
+
+void main
+   (
+   void
+   )
+
+   {
+   task *TimerTask;
+   int  Count;
+
+   Count = 0;
+
+   // Schedule our timing task
+   TimerTask = TS_ScheduleTask( TimeFunction, 30, 1, &Count );
+
+   // Make sure we start it
+   TS_Dispatch();
+
+   while( !kbhit() )
+      {
+      printf( "Count = %d\n", Count );
+      }
+
+   // clear the key that was hit
+   getch();
+
+   // Hey, let's change it so it runs at 1000 times a second!
+   TS_SetTaskRate( TimerTask, 1000 );
+
+   while( !kbhit() )
+      {
+      printf( "Count = %d\n", Count );
+      }
+
+   // clear the key that was hit
+   getch();
+
+   // Stop the clock before we leave
+   TS_Terminate( TimerTask );
+   }
+
+
+Try out that program to see how it works.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+task *TS_ScheduleTask( void ( *Function )( task * ), int rate,
+                       int priority, void *data );
+
+
+TS_ScheduleTask add your function to the list of routines that use the
+timer.  You can it set to any rate you would normally be able to program
+the PC's internal timer for.
+
+rate is the number of times per second your routine should be called.
+
+priority is used for when tasks occur simultaniously and must be called in
+a specific order.
+
+data allows you to pass variables into your timer.  You could set up
+several tasks using one function, but sending in pointers to different
+data.  Here's how to use it:
+
+   int   Data1 = 0;
+   int   Data2 = 100;
+   task *Timer1;
+   task *Timer2;
+
+   Timer1 = TS_ScheduleTask( Function, 100, 1, &Data1 );
+   Timer2 = TS_ScheduleTask( Function, 200, 1, &Data2 );
+   TS_Dispatch();
+   .
+   .
+   .
+void Function
+   (
+   task *Task
+   )
+
+   {
+   int *data;
+
+   data = ( int * )Task->data;
+   *data++;
+   }
+
+The task * that's passed in can also be used to control your task.
+For example, to terminate your task after a certain period of time:
+
+void Function
+   (
+   task *Task
+   )
+
+   {
+   int *data;
+
+   data = ( int * )Task->data;
+   *data++;
+
+   // After 100 times, this task commits suicide.
+   if ( *data > 100 )
+      {
+      TS_Terminate( Task );
+      }
+   }
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+void TS_Dispatch( void );
+
+
+TS_Dispatch starts the timer on all waiting scheduled events.  Several
+events may be scheduled before calling TS_Dispatch.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+int TS_Terminate( task *ptr );
+
+
+TS_Terminate ends a task.  Use this when your done with a task.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+
+void TS_SetTaskRate( task *Task, int rate );
+
+
+TS_SetTaskRate allows you to change the rate a task runs at after you've
+started it up.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ

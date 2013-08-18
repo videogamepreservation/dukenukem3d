@@ -1,0 +1,8 @@
+system dos4g
+option map
+option stack=90k
+option u
+name duke3d
+file game,actors,gamedef,global,menues,player,premap,sector,sounds,rts,config
+file engine,cache1d,mmulti,a,animlib
+library audio_wf.lib,mact\mact386.lib,butwcd4.lib

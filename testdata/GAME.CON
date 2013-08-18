@@ -1,0 +1,8554 @@
+// -------------------------------------------------------------------------
+/*
+Copyright (C) 1996, 2003 - 3D Realms Entertainment
+
+This file is part of Duke Nukem 3D version 1.5 - Atomic Edition
+
+Duke Nukem 3D is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+Original Source: 1996 - Todd Replogle
+Prepared for public release: 03/21/2003 - Charlie Wiederhold, 3D Realms
+*/
+// -------------------------------------------------------------------------
+
+/*
+---------------------------------------------------------------------------
+
+IMPORTANT NOTICE IF YOU USE MODIFIED .CON FILES
+
+If you are playing a MULTIPLAY game (Dukematch or Co-op) and you are
+using *modified* .CON files (USER.CON, GAME.CON, DEFS.CON), then each
+multiplayer must be using the EXACT SAME .CON files, or the game might
+get out of sync and/or develop interesting problems.
+
+3D Realms encourages you to experiment freely with the parameters
+contained in this file, and to share your discoveries with the rest
+of the world.  However, BE ADVISED that 3D Realms does NOT offer 
+any technical support on how to use this file or other user-modifiable 
+features of this game.  Do NOT call 3D Realms or Apogee Software 
+for advice or help with this subject.  
+
+You make modifications to this and other files at your own risk. 
+It is recommended that you first make a backup copy of this, or
+any .CON files before making any changes.
+---------------------------------------------------------------------------
+*/
+
+include DEFS.CON
+include USER.CON
+
+action ANULLACTION 0
+
+// Below is example code that ADDS enemies/items in Duke Nukem 3D.
+
+// "MYENEMY" is simply a three-framed object bouncing around in random angles
+// mindlessly shooting the freeze weapon towards at closest player.
+/*
+define MYENEMY 3590            // A position in .art file
+define MYENEMY_NORMAL_STRENGTH   100
+define MYENEMY_TOUGHER_STRENGTH  200
+define MYENEMY_DAMAGE_TO_PLAYER  -20
+
+definesound MYENEMY_ROAM   my_eroam.voc   0 0 0 0 0
+definesound MYENEMY_HURT   my_ehurt.voc   0 0 0 0 0
+definesound MYENEMY_DEAD   my_edead.voc   0 0 0 0 0
+definesound MYENEMY_SHOOT  my_eshot.voc   0 0 0 0 0
+
+action MYENEMY_ANIMATIONS  0  3  1  1  4
+move MYENEMY_SPEEDS 64
+
+ai AIMYENEMY_BOUNCE   MYENEMY_ANIMATIONS MYENEMY_SPEEDS geth randomangle
+
+useractor enemy MYENEMY
+
+  ifai NO           // 'NO' is defined as '0'
+  {               // Prepare(Initialize) MyEnemy for battle...
+
+    // Give 'MYENEMY' strength.  If it
+    // has a palette lookup other than
+    // 0, make it twice as strong!
+
+    ifspritepal 0
+      strength MYENEMY_NORMAL_STRENGTH
+    else
+      strength MYENEMY_TOUGHER_STRENGTH
+
+    sizeat 48 48      // Set the size of your actor
+
+    cstator 257         // Force actor to block
+
+    ai AIMYENEMY_BOUNCE   // Make it go!
+
+  }
+
+  ifrnd 8
+  {
+
+    // Used with keyword 'shoot'.
+    // BLOODSPLAT1 ,BLOODSPLAT2 ,BLOODSPLAT3 ,BLOODSPLAT4 ,KNEE ,
+    // SHOTSPARK1 ,SHOTGUN ,CHAINGUN ,FIRELASER ,SPIT ,COOLEXPLOSION1 ,
+    // FREEZEBLAST ,RPG ,HANDHOLDINGLASER ,BOUNCEMINE ,MORTER ,SHRINKER
+    // GROWSPARK
+
+    shoot FREEZEBLAST
+
+
+    // A sound effect to play for the shooting action.
+
+    sound MYENEMY_SHOOT
+  }
+
+  ifcount 48   // if after about a second and a half and...
+    ifrnd 16   // if a random value between 0-255 is less than 16...
+      ai AIMYENEMY_BOUNCE // reset everything, including all counters
+
+  ifpdistl 1024
+    ifrnd 16
+  {
+    sound DUKE_GRUNT
+    palfrom 24 24
+    addphealth MYENEMY_DAMAGE_TO_PLAYER
+  }
+
+  ifhitweapon         // Was it hit by a weapon?
+  {
+    debris SCRAP1 2       // OUCH!  Make some peices fall off
+
+    ifdead          // Is it dead yet?
+    {             // If so, then...
+      addkills 1        //   Add 1 kill to player score
+      spawn EXPLOSION2      //   Make an explosion
+      sound MYENEMY_DEAD    //   The sound of death
+
+                    // Damage anything within a close distance.
+      hitradius 2048 WEAKEST WEAK MEDIUMSTRENGTH TOUGH
+      killit          //   Delete sprite (CODE ABORTS HERE)
+    }
+
+    sound MYENEMY_HURT    // No?, Make a hurt sound instead
+  }
+enda
+*/
+
+
+
+define SPACESHUTTLE 487
+move SHUTTLEVELS 16
+actor SPACESHUTTLE TOUGH
+//  ifmove 0          //  Init once
+//    move SHUTTLEVELS getv geth
+enda
+
+
+actor SATELLITE TOUGH
+  //  ifmove 0 move SHUTTLEVELS getv geth
+  //  ifcount 120 move SHUTTLEVELS getv geth randomangle
+enda
+
+state jib_sounds
+  ifrnd SWEARFREQUENCY
+  {
+    ifrnd 128
+    {
+      ifrnd 128
+      {
+        ifrnd 128
+        {
+          ifrnd 128
+          {
+            ifrnd 128
+              globalsound JIBBED_ACTOR12
+            else
+              globalsound JIBBED_ACTOR1
+          }
+          else
+          {
+            ifrnd 128
+              globalsound JIBBED_ACTOR9
+            else
+              globalsound JIBBED_ACTOR14
+          }
+        }
+        else
+        {
+          ifrnd 128
+            globalsound SMACKED
+          else
+            globalsound JIBBED_ACTOR2
+        }
+      }
+      else
+      {
+        ifrnd 128
+          globalsound MDEVSPEECH
+        else
+          globalsound JIBBED_ACTOR5
+      }
+    }
+    else
+    {
+      ifrnd 128
+      {
+        ifrnd 128
+        {
+          ifrnd 128
+            globalsound JIBBED_ACTOR11
+          else
+            globalsound JIBBED_ACTOR13
+        }
+        else
+        {
+          ifrnd 128
+            globalsound JIBBED_ACTOR3
+          else
+            globalsound JIBBED_ACTOR8
+        }
+      }
+      else
+      {
+        ifrnd 128
+        {
+          ifrnd 128
+            globalsound JIBBED_ACTOR6
+          else
+            globalsound JIBBED_ACTOR4
+        }
+        else
+        {
+          ifrnd 128
+          {
+            ifrnd 128
+              globalsound JIBBED_ACTOR10
+            else
+              globalsound JIBBED_ACTOR15
+
+          }
+          else
+            globalsound JIBBED_ACTOR7
+        }
+      }
+    }
+  }
+ends
+
+
+state standard_jibs
+  guts JIBS2 1
+  guts JIBS3 2
+  guts JIBS4 3
+  guts JIBS5 2
+  guts JIBS6 3
+  ifrnd 6
+  {
+    guts JIBS1 1
+    spawn BLOODPOOL
+  }         // a badly drawn spine
+
+  state jib_sounds
+ends
+
+state genericshrunkcode
+  ifcount 32
+  {
+    ifpdistl SQUISHABLEDISTANCE
+    pstomp
+  }
+  else
+  {
+    sizeto MINXSTRETCH MINYSTRETCH
+    spawn FRAMEEFFECT1
+  }
+ends
+
+state genericgrowcode
+  ifcount 32
+  {
+    guts JIBS4 24
+    guts JIBS6 28
+    addkills 1
+    sound SQUISHED
+    sound PIPEBOMB_EXPLODE
+    hitradius 2048 60 70 80 90
+    spawn BLOODPOOL
+    spawn EXPLOSION2
+    killit
+  }
+  else
+  {
+    ifactor COMMANDER
+      sizeto 100 100
+    else
+      ifactor SHARK
+        sizeto 84 84
+    else
+      sizeto MAXXSTRETCH MAXYSTRETCH
+    break
+  }
+ends
+
+
+
+
+action ASHARKCRUZING 0 8 5 1 24
+action ASHARKFLEE  0 8 5 1 10
+action ASHARKATACK   0 8 5 1 6
+action ASHARKSHRUNK  0 8 5 1 24
+action ASHARKGROW  0 8 5 1 24
+action ASHARKFROZEN  0 1 5 1 24
+
+move SHARKVELS 24
+move SHARKFASTVELS 72
+move SHARKFLEEVELS 40
+
+actor SHARK SHARKSTRENGTH ASHARKCRUZING SHARKVELS randomangle geth
+  ifaction ASHARKSHRUNK
+  {
+    ifcount SHRUNKDONECOUNT
+      action ASHARKCRUZING
+    else ifcount SHRUNKCOUNT
+      sizeto 60 60
+    else
+      state genericshrunkcode
+    break
+  }
+  else
+    ifaction ASHARKGROW
+  {
+    ifcount SHRUNKDONECOUNT
+      action ASHARKCRUZING
+    else
+      ifcount SHRUNKCOUNT
+        sizeto 24 24
+    else
+      state genericgrowcode
+  }
+  else
+    ifaction ASHARKFROZEN
+  {
+    fall
+
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+
+    ifcount THAWTIME
+    {
+      action ASHARKFLEE
+      getlastpal
+      break
+    }
+    else
+      ifcount FROZENDRIPTIME
+        ifactioncount 26
+          resetactioncount
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+        break
+
+      lotsofglass 30
+      sound GLASS_BREAKING
+      addkills 1
+      killit
+    }
+    break
+  }
+  else
+    ifaction ASHARKFLEE
+  {
+    ifcount 16
+      ifrnd 48
+    {
+      action ASHARKCRUZING
+      move SHARKVELS randomangle geth
+    }
+  }
+  else
+    ifaction ASHARKCRUZING
+  {
+    ifcansee
+      ifcount 48
+        ifrnd 2
+          ifcanshoottarget
+    {
+      action ASHARKATACK
+      move SHARKFASTVELS faceplayerslow getv break
+    }
+    ifcount 32
+      ifnotmoving
+    {
+      ifrnd 128
+        move SHARKVELS randomangle geth
+      else
+        move SHARKFASTVELS randomangle geth
+    }
+  }
+  else
+    ifaction ASHARKATACK
+  {
+    ifcount 4
+    {
+      ifpdistl 1280
+      {
+        ifp palive ifcanshoottarget
+        {
+          sound DUKE_GRUNT
+          palfrom 32 32
+          addphealth SHARKBITESTRENGTH
+        }
+        action ASHARKFLEE
+        move SHARKFLEEVELS fleeenemy
+      }
+    }
+    else
+      ifnotmoving
+    {
+      ifcount 32
+      {
+        action ASHARKCRUZING
+        move SHARKVELS randomangle geth
+      }
+    }
+    else
+      ifcount 48
+        ifrnd 2
+    {
+      action ASHARKCRUZING
+      move SHARKFASTVELS randomangle geth
+    }
+  }
+
+  ifhitweapon
+  {
+    ifdead
+    {
+      ifwasweapon GROWSPARK
+      {
+        move 0
+        cstat 0
+        action ASHARKGROW
+        sound ACTOR_GROWING
+        break
+      }
+      else
+        ifwasweapon FREEZEBLAST
+      {
+        spritepal 1
+        strength 0
+        action ASHARKFROZEN
+        sound SOMETHINGFROZE
+      }
+      else
+      {
+        sound SQUISHED
+        guts JIBS6 5
+        addkills 1
+        killit
+      }
+    }
+    else
+    {
+      ifwasweapon SHRINKSPARK
+      {
+        action ASHARKSHRUNK
+        sound ACTOR_SHRINKING
+        move 0
+        break
+      }
+      else
+        ifwasweapon GROWSPARK
+          sound EXPANDERHIT
+
+      move SHARKVELS randomangle geth
+    }
+  }
+enda
+
+
+action BLIMPWAITTORESPAWN
+
+state blimphitstate
+  cstat 0
+  spawn FIRSTGUNSPRITE
+  spawn EXPLOSION2
+
+  debris SCRAP1 40      // Weapons and ammo!
+  debris SCRAP2 32
+  debris SCRAP3 32
+  debris SCRAP4 32
+  debris SCRAP5 32
+
+  sound PIPEBOMB_EXPLODE
+  ifrespawn
+  {
+    action BLIMPRESPAWNTIME
+    move 0
+    cstat 32768
+  }
+  else
+    killit
+ends
+
+actor BLIMP 1
+
+  ifaction BLIMPWAITTORESPAWN
+  {
+    ifcount RESPAWNACTORTIME
+    {
+      action 0
+      cstat 0
+      move 0
+    }
+    break
+  }
+
+  ifhitweapon
+  {
+    ifwasweapon RADIUSEXPLOSION
+      state blimphitstate
+    ifwasweapon RPG
+      state blimphitstate
+    strength 1
+  }
+enda
+
+
+
+state rats
+  ifrnd 128
+    spawn RAT
+  ifrnd 128
+    spawn RAT
+  ifrnd 128
+    spawn RAT
+  ifrnd 128
+    spawn RAT
+  ifrnd 128
+    spawn RAT
+  ifrnd 128
+    spawn RAT
+  ifrnd 128
+    spawn RAT
+  ifrnd 128
+    spawn RAT
+ends
+
+move RESPAWN_ACTOR_FLAG
+move MOUSEVELS 32
+
+action RUBCANDENT 1 1 1 1 1
+
+actor RUBBERCAN WEAK
+  ifaction RUBCANDENT
+  {
+    ifactioncount 16
+    {
+      strength 0
+      action ANULLACTION
+      break
+    }
+  }
+  else
+    ifhitweapon
+  {
+    ifwasweapon RADIUSEXPLOSION
+    {
+      state rats
+      ifrnd 48
+        spawn BURNING
+      debris SCRAP3 12
+      killit
+    }
+    else
+      action RUBCANDENT
+  }
+enda
+
+state toughgalspeech
+  ifrnd 64
+  {
+    ifnosounds
+      soundonce TOUGHGALSND1
+  }
+  else
+    ifrnd 64
+  {
+    ifnosounds
+      soundonce TOUGHGALSND2
+  }
+  else
+    ifrnd 64
+  {
+    ifnosounds
+      soundonce TOUGHGALSND3
+  }
+  else
+    ifnosounds
+      soundonce TOUGHGALSND4
+ends
+
+state jibfood
+  sound SQUISHED
+  guts JIBS6 3
+  killit
+ends
+
+state breakobject
+  ifaction 0
+  {
+    action ANULLACTION
+    cstator 257
+    ifactor ROBOTMOUSE
+      clipdist 64
+  }
+  else
+    ifactor ROBOTMOUSE
+  {
+      ifdead
+      {
+        ifcount 32
+        {
+          globalsound MOUSEANNOY
+          killit
+        }
+        break
+      }
+      ifcount 64 ifrnd 6
+      {
+        ifrnd 128
+          move MOUSEVELS randomangle geth
+        else
+        {
+          ifrnd 64
+            soundonce HAPPYMOUSESND1
+          else
+            ifrnd 64
+              soundonce HAPPYMOUSESND2
+          else
+            ifrnd 64
+              soundonce HAPPYMOUSESND3
+          else
+            soundonce HAPPYMOUSESND4
+        }
+        resetcount
+      }
+  }
+
+  ifhitweapon
+  {
+    ifdead
+    {
+      ifactor FOODOBJECT6
+        state jibfood
+      else
+        ifactor FOODOBJECT11
+          state jibfood
+      else
+        ifactor FOODOBJECT12
+          state jibfood
+      else
+        ifactor FOODOBJECT13
+          state jibfood
+      else
+        ifactor FOODOBJECT14
+          state jibfood
+      else
+        ifactor FOODOBJECT15
+          state jibfood
+      else
+        ifactor FOODOBJECT16
+          state jibfood
+      else
+        ifactor FOODOBJECT17
+          state jibfood
+      else
+        ifactor SKINNEDCHICKEN
+          state jibfood
+      else
+        ifactor SHOPPINGCART
+      {
+        debris SCRAP1 5
+        debris SCRAP2 5
+        debris SCRAP3 5
+        sound GLASS_HEAVYBREAK
+        killit
+      }
+      else
+        ifactor ROBOTDOG2
+      {
+        soundonce DEAD_DOG
+        guts JIBS2 1
+        guts JIBS3 2
+        guts JIBS6 3
+        killit
+      }
+      else
+        ifactor FEATHEREDCHICKEN
+          state jibfood
+      else
+        ifactor DOLPHIN1
+      {
+        guts JIBS2 1
+        guts JIBS3 2
+        guts JIBS4 3
+        guts JIBS5 2
+        state jibfood
+      }
+      else
+        ifactor DOLPHIN2
+      {
+        guts JIBS2 1
+        guts JIBS3 2
+        guts JIBS4 3
+        guts JIBS5 2
+        state jibfood
+      }
+      else
+        ifactor SNAKEP
+      {
+        guts JIBS2 1
+        guts JIBS3 2
+        guts JIBS4 3
+        guts JIBS5 2
+        state jibfood
+      }
+      else
+        ifactor DONUTS
+      {
+        spritepal 7
+        guts JIBS6 2
+        killit
+      }
+      else
+        ifactor DONUTS2
+      {
+        debris SCRAP1 1
+        spritepal 7
+        guts JIBS6 2
+        killit
+      }
+      else
+        ifactor MAILBAG
+        {
+          mail 30
+          debris SCRAP3 5
+          debris SCRAP4 3
+          killit
+        }
+      else
+        ifactor TEDDYBEAR
+      {
+        debris SCRAP3 5
+        spritepal 1
+        debris SCRAP3 6
+      }
+      else
+      {
+        ifrnd 128
+          sound GLASS_BREAKING
+        else
+          sound GLASS_HEAVYBREAK
+      }
+
+      ifactor CLOCK
+      {
+        cactor BROKENCLOCK
+        break
+      }
+      else
+        ifactor JOLLYMEAL
+      {
+        spawn ATOMICHEALTH
+        debris SCRAP3 1
+        debris SCRAP4 2
+      }
+      else
+        ifactor GUMBALLMACHINE
+      {
+        cactor GUMBALLMACHINEBROKE
+        strength 1
+        debris SCRAP4 2
+        lotsofglass 10
+        break
+      }
+      else
+        ifactor GUMBALLMACHINEBROKE
+      {
+        debris SCRAP3 3
+        debris SCRAP4 2
+        lotsofglass 10
+      }
+      else
+        ifactor DUKEBURGER
+      {
+        debris SCRAP3 14
+        debris SCRAP1 13
+        debris SCRAP4 12
+        debris SCRAP2 12
+        debris SCRAP5 11
+      }
+      else
+        ifactor POLICELIGHTPOLE
+      {
+        debris SCRAP3 4
+        debris SCRAP1 3
+        debris SCRAP4 2
+        debris SCRAP2 2
+        debris SCRAP5 1
+      }
+      else
+        ifactor TOPSECRET
+          paper 10
+      else
+        ifactor GUNPOWDERBARREL
+      {
+        spawn EXPLOSION2
+        sound PIPEBOMB_EXPLODE
+        hitradius 2048 WEAKEST WEAK MEDIUMSTRENGTH TOUGH
+        ifpdistl 2048
+          wackplayer
+        debris SCRAP1 10      // Weapons and ammo!
+        debris SCRAP2 13
+        debris SCRAP3 4
+        debris SCRAP4 17
+        debris SCRAP5 6
+      }
+      else
+        ifactor FLOORBASKET
+      {
+        spawn PUKE
+        debris SCRAP1 2
+        debris SCRAP3 3
+        debris SCRAP4 2
+      }
+      else
+        ifactor ROBOTMOUSE
+      {
+        debris SCRAP2 10
+        spritepal 1
+        debris SCRAP3 4
+        resetcount
+        cstat 32768
+        break
+      }
+      else
+        ifactor ROBOTPIRATE
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor PIRATE1A
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor MAN
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor MAN2
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor PIRATE2A
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor PIRATE3A
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor PIRATE4A
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor PIRATE4A
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor PIRATE5A
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+        ifactor PIRATE6A
+      {
+        debris SCRAP2 10
+        debris SCRAP1 5
+        debris SCRAP3 3
+        lotsofglass 10
+      }
+      else
+      {
+        lotsofglass 10
+        debris SCRAP4 3
+      }
+      killit
+    }
+    else
+      ifactor DOLPHIN1
+    {
+      guts JIBS6 1
+      soundonce DOLPHINSND
+      ifstrength TOUGH
+      {
+        cactor DOLPHIN2
+        sound SQUISHED
+      }
+    }
+    else
+      ifactor DOLPHIN2
+    {
+      guts JIBS6 1
+      soundonce DOLPHINSND
+    }
+    else
+      ifactor ROBOTDOG2
+    {
+      guts JIBS6 1
+      soundonce WHINING_DOG
+    }
+  }
+  else
+  {
+    ifactor CLOCK
+      nullop
+    else
+      ifactor TOPSECRET
+        nullop
+    else
+      ifactor SKINNEDCHICKEN
+        nullop
+    else
+      ifactor FEATHEREDCHICKEN
+        nullop
+    else
+      ifactor FOODOBJECT2
+        nullop
+    else
+      ifactor FOODOBJECT6
+        nullop
+    else
+      ifactor DOLPHIN1
+        nullop
+    else
+      ifactor DOLPHIN2
+        nullop
+    else
+      fall
+  }
+
+
+ends
+
+action ABURGERROTS 0 1 5
+useractor notenemy DUKEBURGER PIRATEGALSTRENGTH ABURGERROTS state breakobject enda
+
+useractor notenemy MOP WEAK state breakobject enda
+
+useractor notenemy BROOM WEAK state breakobject enda
+
+useractor notenemy WETFLOOR WEAK state breakobject enda
+
+useractor notenemy DESKLAMP WEAK state breakobject enda
+
+// useractor notenemy DUKECUTOUT WEAK state breakobject enda
+
+useractor notenemy HATRACK WEAK state breakobject enda
+
+useractor notenemy GUNPOWDERBARREL TOUGH state breakobject enda
+
+useractor notenemy COFFEEMACHINE WEAK state breakobject enda
+
+useractor notenemy TEDDYBEAR WEAK state breakobject enda
+
+useractor notenemy TOPSECRET WEAK state breakobject enda
+
+useractor notenemy ROBOTMOUSE ROBOTMOUSESTRENGTH state breakobject enda
+
+useractor notenemy MAN PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy MAN2 PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy WOMAN PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy PIRATE1A PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy PIRATE2A PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy PIRATE3A PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy PIRATE4A PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy PIRATE5A PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy PIRATE6A PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy ROBOTPIRATE PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy PIRATEHALF TOUGH state breakobject enda
+
+useractor notenemy CHESTOFGOLD WEAK state breakobject enda
+
+useractor notenemy ROBOTDOG PIRATEGALSTRENGTH state breakobject enda
+
+useractor notenemy ROBOTDOG2 TOUGH state breakobject enda
+
+useractor notenemy PLEASEWAIT state breakobject enda
+
+useractor notenemy FOODOBJECT1 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT2 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT3 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT4 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT5 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT6 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT7 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT8 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT9 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT10 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT11 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT12 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT13 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT14 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT15 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT16 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT17 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT18 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT19 WEAK state breakobject enda
+
+useractor notenemy FOODOBJECT20 WEAK state breakobject enda
+
+useractor notenemy JOLLYMEAL WEAK state breakobject enda
+
+useractor notenemy GUMBALLMACHINE WEAK state breakobject enda
+
+useractor notenemy GUMBALLMACHINEBROKE WEAK state breakobject enda
+
+useractor notenemy POLICELIGHTPOLE TOUGH state breakobject enda
+
+useractor notenemy CLOCK WEAK state breakobject enda
+
+useractor notenemy MAILBAG WEAK state breakobject enda
+
+useractor notenemy FEATHEREDCHICKEN WEAK state breakobject enda
+
+useractor notenemy SKINNEDCHICKEN WEAK state breakobject enda
+
+useractor notenemy HEADLAMP WEAK state breakobject enda
+
+useractor notenemy DOLPHIN1 DOLPHINSTRENGTH state breakobject enda
+
+useractor notenemy DOLPHIN2 DOLPHINSTRENGTH state breakobject enda
+
+useractor notenemy SNAKEP MEDIUMSTRENGTH state breakobject enda
+
+useractor notenemy DONUTS WEAK state breakobject enda
+
+useractor notenemy GAVALS WEAK state breakobject enda
+
+useractor notenemy GAVALS2 WEAK state breakobject enda
+
+useractor notenemy CUPS WEAK state breakobject enda
+
+useractor notenemy DONUTS2 WEAK state breakobject enda
+
+useractor notenemy FLOORBASKET WEAK state breakobject enda
+
+useractor notenemy METER WEAK state breakobject enda
+
+useractor notenemy DESKPHONE WEAK state breakobject enda
+
+useractor notenemy MACE WEAK state breakobject enda
+
+useractor notenemy SHOPPINGCART WEAK state breakobject enda
+
+useractor notenemy COFFEEMUG WEAK state breakobject enda
+
+
+
+state headhitstate
+
+// Unrem the following line to invoke screen tilting during
+// low player hitpoint damage.
+
+// wackplayer
+
+ends
+
+
+action EXPBARRELFRAME     0   2   1   1   15
+actor EXPLODINGBARREL 26
+  fall
+  ifaction EXPBARRELFRAME
+  {
+    ifactioncount 2
+    {
+      hitradius 1024 WEAKEST WEAK MEDIUMSTRENGTH TOUGH
+      spawn EXPLOSION2
+      debris SCRAP2 2
+      sound PIPEBOMB_EXPLODE
+      killit
+    }
+    break
+  }
+  ifsquished
+  {
+    debris SCRAP1 5
+    killit
+    break
+  }
+  ifhitweapon
+    action EXPBARRELFRAME
+enda
+
+action BURNING_FLAME  0   12   1   1   2
+move BURNING_VELS 
+
+state burningstate
+
+  sleeptime 300
+
+
+  ifspawnedby BURNING
+  {
+    ifgapzl 16
+      break
+  }
+  else
+    ifspawnedby BURNING2
+  {
+    ifgapzl 16
+      break
+  }
+
+  ifpdistg 10240
+    break
+
+  ifcount 128
+  {
+    ifspawnedby TIRE
+    {
+      ifactioncount 512
+        killit
+      ifrnd 16
+        sizeto 64 48
+    }
+    else
+    {
+      sizeto 8 8
+      sizeto 8 8
+      ifcount 192
+        killit
+    }
+  }
+  else
+  {
+    ifmove 0
+      move BURNING_VELS
+
+    sizeto 52 52
+
+    ifp palive
+      ifpdistl 844
+        ifrnd 32
+          ifcansee
+    {
+      soundonce DUKE_LONGTERM_PAIN
+      addphealth -1
+      palfrom 24 16
+    }
+  }
+
+ends
+
+actor BURNING WEAK BURNING_FLAME
+  state burningstate
+enda
+
+actor BURNING2 WEAK BURNING_FLAME
+  state burningstate
+enda
+
+action TOILETWATERFRAMES 0 4 1 1 1
+actor TOILETWATER 0 TOILETWATERFRAMES
+  ifpdistl 8192
+  {
+    soundonce WATER_GURGLE
+    ifspawnedby TOILET
+      sizeto 34 34
+    else
+    {
+      ifspawnedby WATERFOUNTAINBROKE
+        sizeto 6 15
+      else
+        ifspawnedby TOILETWATER
+          nullop
+      else
+        sizeto 24 32
+    }
+
+    ifp palive
+      ifpdistl RETRIEVEDISTANCE
+        ifp pfacing
+          ifactioncount 32
+            ifphealthl MAXPLAYERHEALTH
+              ifhitspace
+                ifcansee
+    {
+      addphealth 1
+      globalsound DUKE_DRINKING
+      resetactioncount
+    }
+  }
+enda
+
+action WOODENHORSEFRAME  0   1   4
+action WOODENFALLFRAME  122  1   5
+
+actor HORSEONSIDE WEAKEST
+  cactor WOODENHORSE
+  action WOODENFALLFRAME
+enda
+actor WOODENHORSE WEAK WOODENHORSEFRAME
+  fall
+  ifhitweapon
+  {
+    ifdead
+    {
+      debris SCRAP1 4
+      debris SCRAP2 3
+      killit
+    }
+    else
+      action WOODENFALLFRAME
+  }
+enda
+
+state steamcode
+  ifpdistl 6144
+    soundonce STEAM_HISSING
+
+  ifcount 20
+    {
+      resetcount
+      ifp palive
+        ifpdistl 1024
+      {
+        addphealth -1
+        palfrom 16 16
+      }
+    }
+  else
+  {
+    ifspawnedby STEAM
+      break
+    else
+      ifspawnedby CEILINGSTEAM
+        break
+
+    sizeto 24 24
+  }
+ends
+
+action STEAMFRAMES    0     5     1     1     1
+actor STEAM 0 STEAMFRAMES
+  state steamcode
+enda
+
+actor CEILINGSTEAM 0 STEAMFRAMES
+  state steamcode
+enda
+
+actor WATERBUBBLEMAKER 0 0 randomangle
+  ifpdistl 3084
+    ifrnd 24
+      spawn WATERBUBBLE
+enda
+
+action BUBBLE
+action CRACKEDBUBBLE  1
+move BUBMOVE       -10 -36
+move BUBMOVEFAST     -10 -52
+
+actor WATERBUBBLE 0 BUBBLE BUBMOVE getv geth randomangle
+
+  ifaction CRACKEDBUBBLE
+  {
+    ifinwater
+      ifrnd 192
+        killit
+    ifactioncount 7
+      killit
+  }
+  else
+  {
+    ifcount 4
+    {
+      ifrnd 192
+        move BUBMOVE getv geth randomangle
+      else
+        move BUBMOVEFAST getv geth randomangle
+      resetcount
+
+      ifrnd 84
+        sizeat 8 10
+      else
+        ifrnd 84
+          sizeat 10 8
+      else
+        sizeat 9 9
+    }
+
+    ifonwater
+    {
+      iffloordistl 8
+        action CRACKEDBUBBLE
+    }
+    else
+      ifactioncount 40
+        action CRACKEDBUBBLE
+  }
+enda
+
+
+move SMOKEVEL 8 -16
+move ENGINE_SMOKE 64 -64
+move SMOKESHOOTOUT -192
+action SMOKEFRAMES 0 4 1 1 10
+actor SMALLSMOKE 0 SMOKEFRAMES
+  ifmove 0
+  {
+    ifspawnedby RECON
+      move SMOKESHOOTOUT geth
+    else
+      ifspawnedby SECTOREFFECTOR
+        move ENGINE_SMOKE geth getv
+    else
+      move SMOKEVEL geth getv faceplayer
+    ifspawnedby RPG
+      cstat 2
+  }
+  ifpdistl 1596
+    ifspawnedby RPG
+      killit
+  ifactioncount 4
+    killit
+enda
+
+action BARREL_DENTING  2 2 1 1 6
+action BARREL_DENTED   1
+action BARREL_DENTED2  2
+
+move SPAWNED_BLOOD
+
+actor NUKEBARRELDENTED WEAK
+  cactor NUKEBARREL
+  action BARREL_DENTED
+enda
+
+actor NUKEBARRELLEAKED WEAK
+  cactor NUKEBARREL
+  action BARREL_DENTED2
+enda
+
+state random_ooz
+  ifrnd 128
+    spawn OOZ2
+  else
+    spawn OOZ
+ends
+
+actor NUKEBARREL MEDIUMSTRENGTH
+  ifsquished
+  {
+    debris SCRAP1 32
+    spawn BLOODPOOL
+    state random_ooz
+    killit
+  }
+  fall
+  ifaction BARREL_DENTING
+  {
+    ifactioncount 2
+    {
+      debris SCRAP1 10
+      ifrnd 2 spawn BLOODPOOL
+      killit
+    }
+  }
+  else
+    ifhitweapon
+  {
+    ifdead
+    {
+      sound VENT_BUST
+
+      ifrnd 128
+        spawn BLOODPOOL
+      action BARREL_DENTING
+    }
+    else
+    {
+      ifaction 0
+        action BARREL_DENTED
+      else
+        ifaction BARREL_DENTED
+      {
+        action BARREL_DENTED2
+        spawn BLOODPOOL
+      }
+      else
+        ifaction BARREL_DENTED2
+          action BARREL_DENTING
+    }
+  }
+enda
+
+state burningbarrelcode
+  fall
+  ifcount 32
+  {
+    resetcount
+    ifp palive
+      ifpdistl 1480
+        ifp phigher
+    {
+      addphealth -1
+      palfrom 16 16
+      ifrnd 96
+        sound DUKE_LONGTERM_PAIN
+    }
+  }
+  ifhitweapon
+  {
+    sound VENT_BUST
+    debris SCRAP1 10
+    ifrnd 128
+      spawn BURNING
+    else
+      spawn BURNING2
+    killit
+  }
+ends
+
+actor FIREBARREL
+  state burningbarrelcode
+enda
+actor FIREVASE
+  state burningbarrelcode
+enda
+
+action SHRINKERFRAMES 0 4 1 1 10
+actor SHRINKEREXPLOSION 0 SHRINKERFRAMES
+  ifactioncount 4
+    killit
+enda
+
+action EXPLOSION_FRAMES 0 20 1 1  4
+actor EXPLOSION2 1 EXPLOSION_FRAMES
+  ifactioncount 20
+    killit
+enda
+
+actor EXPLOSION2BOT 1 EXPLOSION_FRAMES
+  ifactioncount 20
+    killit
+enda
+
+action FFLAME_FR 0 16 1 1 1
+action FFLAME 0 1 1 1 1
+
+actor FLOORFLAME 0 FFLAME_FR
+  ifaction FFLAME_FR
+  {
+    ifpdistl 1024
+      hitradius 1024 WEAKEST WEAKEST WEAKEST WEAKEST
+    ifactioncount 16
+      action FFLAME
+  }
+  ifaction FFLAME
+    ifrnd 4
+  {
+    action FFLAME_FR
+    sound CAT_FIRE
+    resetactioncount
+  }
+enda
+
+
+
+action ASATNSPIN     0 5 1 1 4
+action ASATSHOOTING   -10 3 5 1 40
+action ASATWAIT      0 1 5 1 1
+move TURRVEL
+
+actor ROTATEGUN ROTTURRETSTRENGTH
+// ASATSHOOTING TURRVEL faceplayer
+
+  ifaction 0
+  {
+    action ASATSHOOTING
+    move TURRVEL faceplayer
+  }
+  else
+    ifaction ASATNSPIN
+  {
+    ifactioncount 32
+    {
+      action ASATWAIT
+      move TURRVEL faceplayer
+    }
+  }
+  else
+    ifaction ASATSHOOTING
+  {
+    ifactioncount 12
+      ifrnd 32
+    {
+      action ASATWAIT
+      move 0
+    }
+    ifcount 32
+      resetcount
+    else
+      ifcount 16
+    {
+      ifcount 17 nullop
+      else
+      {
+        sound PRED_ATTACK
+        shoot FIRELASER
+      }
+    }
+    else
+      ifcount 4
+    {
+      ifcount 5 nullop
+      else
+      {
+        ifcansee
+          ifcanshoottarget
+        {
+          sound PRED_ATTACK
+          shoot FIRELASER
+        }
+      }
+    }
+  }
+  else
+    ifaction ASATWAIT
+  {
+    ifactioncount 64
+      ifrnd 32
+        ifp palive
+          ifcansee
+    {
+      action ASATSHOOTING
+      move TURRVEL faceplayer
+    }
+  }
+  ifhitweapon
+  {
+    ifdead
+    {
+      addkills 1
+      sound LASERTRIP_EXPLODE
+      debris SCRAP1 15
+      spawn EXPLOSION2
+      killit
+    }
+    else
+    {
+      action ASATNSPIN
+      debris SCRAP1 4
+    }
+    move 0
+  }
+enda
+
+action RIP_F 0 8 1 1 1
+actor FORCERIPPLE 0 RIP_F
+  ifactioncount 8
+    killit
+enda
+
+action TRANSFOWARD 0  6  1  1  2
+action TRANSBACK   5  6  1 -1  2
+actor TRANSPORTERSTAR 0 TRANSFOWARD
+  ifaction TRANSFOWARD
+  {
+    ifactioncount 6
+      action TRANSBACK
+  }
+  else
+    ifactioncount 6
+      killit
+enda
+
+action BEAMFOWARD  0  4  1  1  9
+actor TRANSPORTERBEAM 0 BEAMFOWARD
+  sizeto 32 64
+  sizeto 32 64
+  sizeto 32 64
+  ifactioncount 4
+    killit
+enda
+
+state getcode
+  ifactor ATOMICHEALTH
+    globalsound GETATOMICHEALTH
+  else
+    globalsound DUKE_GET
+  palfrom 16 0 32
+  ifrespawn
+  {
+    move RESPAWN_ACTOR_FLAG
+    spawn RESPAWNMARKERRED
+    cstat 32768
+  }
+  else
+    killit
+ends
+
+state randgetweapsnds
+  ifrnd 64
+    globalsound DUKE_GETWEAPON1
+  else
+    ifrnd 96
+      globalsound DUKE_GETWEAPON2
+  else
+    ifrnd 128
+      globalsound DUKE_GETWEAPON3
+  else
+    ifrnd 140
+      globalsound DUKE_GETWEAPON4
+  else
+    globalsound DUKE_GETWEAPON6
+ends
+
+state getweaponcode
+
+  state randgetweapsnds
+
+  palfrom 32 0 32
+  ifgotweaponce 1
+    break
+  ifrespawn
+  {
+    move RESPAWN_ACTOR_FLAG
+    spawn RESPAWNMARKERRED
+    cstat 32768
+  }
+  else
+    killit
+ends
+
+
+state respawnit
+  ifcount RESPAWNITEMTIME
+  {
+    spawn TRANSPORTERSTAR
+    move 0
+    cstat 0
+    sound TELEPORTER
+  }
+ends
+
+state quikget
+  ifactor ATOMICHEALTH
+    globalsound GETATOMICHEALTH
+  else
+    globalsound DUKE_GET
+  palfrom 16 0 32
+  killit
+ends
+
+state quikweaponget
+  state randgetweapsnds
+  palfrom 32 0 32
+  ifgotweaponce 1
+    break
+  killit
+ends
+
+actor STEROIDS
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk
+      nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifpinventory GET_STEROIDS STEROID_AMOUNT
+              ifcanseetarget
+      {
+        addinventory GET_STEROIDS STEROID_AMOUNT
+        quote 37
+        ifspawnedby STEROIDS
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor BOOTS
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk
+      nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifpinventory GET_BOOTS BOOT_AMOUNT
+              ifcanseetarget
+      {
+        addinventory GET_BOOTS BOOT_AMOUNT
+        quote 6
+        ifspawnedby BOOTS
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor HEATSENSOR
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk
+      nullop
+  else
+    ifp palive
+      ifcount 6
+        ifpdistl RETRIEVEDISTANCE
+          ifpinventory GET_HEATS HEAT_AMOUNT
+            ifcanseetarget
+      {
+        addinventory GET_HEATS HEAT_AMOUNT
+        quote 101
+        ifspawnedby HEATSENSOR
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor SHIELD
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifpinventory GET_SHIELD SHIELD_AMOUNT
+              ifcanseetarget
+      {
+        ifspawnedby PIGCOP
+        {
+          ifrnd 128
+            addinventory GET_SHIELD PIG_SHIELD_AMOUNT1
+          else
+            addinventory GET_SHIELD PIG_SHIELD_AMOUNT2
+          quote 104
+          sound KICK_HIT
+          palfrom 24 0 32
+          killit
+        }
+        else
+          addinventory GET_SHIELD SHIELD_AMOUNT
+        quote 38
+        ifspawnedby SHIELD
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+
+actor AIRTANK
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifpinventory GET_SCUBA SCUBA_AMOUNT
+              ifcanseetarget
+      {
+        addinventory GET_SCUBA SCUBA_AMOUNT
+        quote 39
+        ifspawnedby AIRTANK
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+action HOLODUKE_FRAMES 0 4 1 1 8
+actor HOLODUKE 0 HOLODUKE_FRAMES
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifpinventory GET_HOLODUKE HOLODUKE_AMOUNT
+              ifcanseetarget
+      {
+        addinventory GET_HOLODUKE HOLODUKE_AMOUNT
+        quote 51
+        ifspawnedby HOLODUKE
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor JETPACK
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifpinventory GET_JETPACK JETPACK_AMOUNT
+              ifcanseetarget
+      {
+        addinventory GET_JETPACK JETPACK_AMOUNT
+        quote 41
+        ifspawnedby JETPACK
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor ACCESSCARD
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifpinventory GET_ACCESS 0
+          break
+        addinventory GET_ACCESS 1
+        quote 43
+        state getcode
+      }
+enda
+
+actor AMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifcanseetarget
+      {
+        addammo PISTOL_WEAPON PISTOLAMMOAMOUNT
+        quote 65
+        ifspawnedby AMMO
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor FREEZEAMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifcanseetarget
+      {
+        addammo FREEZE_WEAPON FREEZEAMMOAMOUNT
+        quote 66
+        ifspawnedby FREEZEAMMO
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor SHOTGUNAMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifcanseetarget
+      {
+        addammo SHOTGUN_WEAPON SHOTGUNAMMOAMOUNT
+        quote 69
+        ifspawnedby SHOTGUNAMMO
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor AMMOLOTS
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifcount 6
+          ifpdistl RETRIEVEDISTANCE
+            ifcanseetarget
+      {
+        addammo PISTOL_WEAPON 48
+        quote 65
+        ifspawnedby AMMOLOTS
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor CRYSTALAMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        addammo SHRINKER_WEAPON CRYSTALAMMOAMOUNT
+        quote 78
+        ifspawnedby CRYSTALAMMO
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor GROWAMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        addammo GROW_WEAPON GROWCRYSTALAMMOAMOUNT
+        quote 123
+        ifspawnedby GROWAMMO
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor BATTERYAMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        addammo CHAINGUN_WEAPON CHAINGUNAMMOAMOUNT
+          quote 63
+        ifspawnedby BATTERYAMMO
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor DEVISTATORAMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        addammo DEVISTATOR_WEAPON DEVISTATORAMMOAMOUNT
+        quote 14
+        ifspawnedby DEVISTATORAMMO
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor RPGAMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else ifp palive
+      ifpdistl RETRIEVEDISTANCE
+        ifcount 6
+          ifcanseetarget
+      {
+        addammo RPG_WEAPON RPGAMMOBOX
+        quote 64
+        ifspawnedby RPGAMMO
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor HBOMBAMMO
+  fall
+  ifmove RESPAWN_ACTOR_FLAG state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifgotweaponce 0
+          break
+
+        addweapon HANDBOMB_WEAPON HANDBOMBBOX
+        quote 55
+//        addammo HANDBOMB_WEAPON HANDBOMBBOX
+
+        ifspawnedby HBOMBAMMO
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+actor RPGSPRITE
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifgotweaponce 0
+          break
+
+        addweapon RPG_WEAPON RPGAMMOBOX
+        quote 56
+        ifspawnedby RPGSPRITE
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+actor SHOTGUNSPRITE
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifspawnedby PIGCOP
+        {
+          addweapon SHOTGUN_WEAPON 0
+          ifrnd 64
+            addammo SHOTGUN_WEAPON 4
+          else ifrnd 64
+            addammo SHOTGUN_WEAPON 3
+          else ifrnd 64
+            addammo SHOTGUN_WEAPON 2
+          else
+            addammo SHOTGUN_WEAPON 1
+        }
+        else
+        {
+          ifgotweaponce 0
+            break
+          addweapon SHOTGUN_WEAPON SHOTGUNAMMOAMOUNT
+          quote 57
+        }
+
+        ifspawnedby SHOTGUNSPRITE
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+
+
+actor SIXPAK
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifphealthl MAXPLAYERHEALTH
+              ifcanseetarget
+      {
+        addphealth 30
+        quote 62
+        ifspawnedby SIXPAK
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor COLA
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifphealthl MAXPLAYERHEALTH
+              ifcanseetarget
+      {
+        addphealth 10
+        quote 61
+        ifspawnedby COLA
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+actor ATOMICHEALTH
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifphealthl MAXPLAYERATOMICHEALTH
+              ifcanseetarget
+      {
+        addphealth 50
+        quote 19
+        ifspawnedby ATOMICHEALTH
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+
+
+
+actor FIRSTAID
+  fall
+  ifmove RESPAWN_ACTOR_FLAG state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifpinventory GET_FIRSTAID FIRSTAID_AMOUNT
+              ifcanseetarget
+      {
+        addinventory GET_FIRSTAID FIRSTAID_AMOUNT
+        quote 3
+
+        ifspawnedby FIRSTAID
+          state getcode
+        else
+          state quikget
+      }
+enda
+
+
+actor FIRSTGUNSPRITE
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifgotweaponce 0
+          break
+        addweapon PISTOL_WEAPON 48
+        ifspawnedby FIRSTGUNSPRITE
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+
+actor TRIPBOMBSPRITE
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifgotweaponce 0
+          break
+
+        addweapon TRIPBOMB_WEAPON 1
+        quote 58
+        ifspawnedby TRIPBOMBSPRITE
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+actor CHAINGUNSPRITE
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifgotweaponce 0
+          break
+
+        addweapon CHAINGUN_WEAPON 50
+        quote 54
+        ifspawnedby CHAINGUNSPRITE
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+
+
+actor SHRINKERSPRITE
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifgotweaponce 0
+          break
+        addweapon SHRINKER_WEAPON 10
+        quote 60
+        ifspawnedby SHRINKERSPRITE
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+actor FREEZESPRITE
+  fall
+  ifmove RESPAWN_ACTOR_FLAG
+    state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifgotweaponce 0
+          break
+
+        addweapon FREEZE_WEAPON FREEZEAMMOAMOUNT
+        quote 59
+        ifspawnedby FREEZESPRITE
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+actor DEVISTATORSPRITE
+  fall
+  ifmove RESPAWN_ACTOR_FLAG state respawnit
+  else
+    ifp pshrunk nullop
+    else
+      ifp palive
+        ifpdistl RETRIEVEDISTANCE
+          ifcount 6
+            ifcanseetarget
+      {
+        ifgotweaponce 0
+          break
+        addweapon DEVISTATOR_WEAPON DEVISTATORAMMOAMOUNT
+        quote 87
+        ifspawnedby DEVISTATORSPRITE
+          state getweaponcode
+        else
+          state quikweaponget
+      }
+enda
+
+action FIRE_FRAMES   -1 14 1 1 1
+move FIREVELS
+
+state firestate
+
+  ifaction 0
+    ifrnd 16
+    {
+      action FIRE_FRAMES
+      cstator 128
+    }
+
+  sleeptime 300         // Never let it fall to sleep
+
+  ifspawnedby FIRE
+  {
+    ifgapzl 16
+      break
+  }
+  else
+    ifspawnedby FIRE2
+  {
+    ifgapzl 16
+      break
+  }
+
+  ifinwater
+    killit
+
+  ifp palive
+    ifpdistl 844
+      ifrnd 32
+        ifcansee
+  {
+    soundonce DUKE_LONGTERM_PAIN
+    addphealth -1
+    palfrom 32 32
+  }
+
+  ifactor FIRE
+  {
+    ifspawnedby FIRE
+      break
+  }
+  else
+    ifactor FIRE2
+      ifspawnedby FIRE2
+        break
+
+  iffloordistl 128
+  {
+    ifrnd 128
+    {
+      ifcount 84
+        killit
+                // This line(and the else below)
+                // is not necessary, since actors
+                // with zero x-size are automatically
+                // deleted anyway!
+      else
+        ifcount 42
+          sizeto 0 0
+      else
+        sizeto 32 32
+    }
+  }
+  else
+    killit
+
+ends
+
+useractor notenemy FIRE WEAK 0 FIREVELS state firestate enda
+useractor notenemy FIRE2 WEAK 0 FIREVELS state firestate enda
+
+actor FECES
+  ifcount 24
+  {
+    ifpdistl RETRIEVEDISTANCE
+    {
+      ifrnd SWEARFREQUENCY
+        soundonce DUKE_STEPONFECES
+
+      sound STEPNIT
+
+      spawn BLOODPOOL   // Will be brown
+      killit
+    }
+  }
+  else
+    sizeto 32 32
+enda
+
+state drop_ammo
+  ifrnd SPAWNAMMOODDS
+    spawn AMMO
+ends
+
+state drop_battery
+  ifrnd SPAWNAMMOODDS
+    spawn BATTERYAMMO
+ends
+state drop_sgshells
+  ifrnd SPAWNAMMOODDS
+    spawn SHOTGUNAMMO
+ends
+state drop_shotgun
+  ifrnd SPAWNAMMOODDS
+    spawn SHOTGUNSPRITE
+ends
+state drop_chaingun
+  ifrnd SPAWNAMMOODDS
+  {
+    ifrnd 32
+      spawn CHAINGUNSPRITE
+    else
+      spawn BATTERYAMMO
+  }
+ends
+
+
+state random_wall_jibs
+  ifrnd 96
+    shoot BLOODSPLAT1
+  ifrnd 96
+    shoot BLOODSPLAT2
+  ifrnd 96
+    shoot BLOODSPLAT3
+  ifrnd 96
+    shoot BLOODSPLAT4
+  ifrnd 96
+    shoot BLOODSPLAT1
+ends
+
+
+
+
+action FEMSHRUNK
+action FEMFROZEN1 1
+action FEMGROW
+action FEMFROZEN2
+action FEMDANCE1 19 1 1 1 16
+action FEMDANCE3 19 1 1 1 26
+action FEMDANCE2 20 2 1 1 10
+
+action FEMANIMATESLOW 0 2 1 1 100
+action TOUGHGALANIM   0 5 1 1 25
+action FEMANIMATE
+
+state femcode
+
+  ifactor NAKED1 nullop
+  else
+    ifactor FEM6 nullop
+    else
+    {
+      fall
+      ifactor BLOODYPOLE
+        ifhitweapon
+          ifdead
+      {
+        state standard_jibs
+        killit
+      }
+    }
+
+  ifaction FEMSHRUNK
+  {
+    ifcount SHRUNKDONECOUNT
+    {
+      action FEMANIMATE
+      cstat 257
+    }
+    else
+      ifcount SHRUNKCOUNT
+        sizeto 40 40
+    else
+      state genericshrunkcode
+  }
+  else ifaction FEMGROW
+  {
+    ifcount 32
+    {
+      respawnhitag
+      guts JIBS4 20
+      guts JIBS6 20
+      spritepal 6
+      soundonce LADY_SCREAM
+      ifactor NAKED1
+        debris SCRAP3 4
+      else
+        ifactor PODFEM1
+          debris SCRAP3 4
+      sound SQUISHED
+      killit
+    }
+    else
+      sizeto MAXXSTRETCH MAXYSTRETCH
+  }
+
+  else
+    ifaction FEMDANCE1
+  {
+    ifactioncount 2
+      action FEMDANCE2
+  }
+  else
+    ifaction FEMDANCE2
+  {
+    ifactioncount 8
+      action FEMDANCE3
+  }
+  else
+    ifaction FEMDANCE3
+  {
+    ifactioncount 2
+    action FEMANIMATE
+  }
+  else
+    ifaction FEMFROZEN1
+  {
+    ifcount THAWTIME
+    {
+      action FEMANIMATE
+      getlastpal
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      lotsofglass 30
+      sound GLASS_BREAKING
+      respawnhitag
+      ifrnd 84
+        spawn BLOODPOOL
+      killit
+    }
+    else
+      ifp pfacing
+        ifpdistl FROZENQUICKKICKDIST
+          pkick
+    break
+  }
+  else ifaction FEMFROZEN2
+  {
+    ifcount THAWTIME
+    {
+      ifactor TOUGHGAL
+        action TOUGHGALANIM
+      else
+        ifactor FEM10
+          action FEMANIMATESLOW
+      else
+        action FEMANIMATE
+
+      getlastpal
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+          break
+      }
+
+      lotsofglass 30
+
+      sound GLASS_BREAKING
+      ifrnd 84
+        spawn BLOODPOOL
+      respawnhitag
+
+      ifrnd 128
+        sound DUKE_HIT_STRIPPER1
+      else
+        sound DUKE_HIT_STRIPPER2
+
+      killit
+    }
+    else
+      ifp pfacing
+        ifpdistl FROZENQUICKKICKDIST
+          pkick
+    break
+  }
+
+  ifhitweapon
+  {
+    ifdead
+    {
+      ifwasweapon GROWSPARK
+      {
+        cstat 0
+        move 0
+        sound ACTOR_GROWING
+        action FEMGROW
+        break
+      }
+      else ifwasweapon FREEZEBLAST
+      {
+        ifaction FEMSHRUNK
+          break
+
+        ifactor NAKED1
+          action FEMFROZEN2
+        else
+          ifactor FEM5
+            action FEMFROZEN2
+        else
+          ifactor FEM6
+            action FEMFROZEN2
+        else
+          ifactor FEM8
+            action FEMFROZEN2
+        else
+          ifactor FEM9
+            action FEMFROZEN2
+        else
+          ifactor FEM10
+            action FEMFROZEN2
+        else
+          ifactor TOUGHGAL
+            action FEMFROZEN2
+        else
+          ifactor PODFEM1
+            action FEMFROZEN2
+        else
+          action FEMFROZEN1
+
+        move 0
+        spritepal 1
+        strength 0
+
+        sound SOMETHINGFROZE
+
+        break
+      }
+
+      ifrnd 128
+        sound DUKE_HIT_STRIPPER1
+      else
+        sound DUKE_HIT_STRIPPER2
+
+      respawnhitag
+      state standard_jibs
+      state random_wall_jibs
+      spawn BLOODPOOL
+
+      ifactor FEM1
+        money 5
+      else
+        ifactor FEM2
+      {
+        money 7
+        cactor BARBROKE
+        cstat 0
+      }
+      else
+        ifactor FEM3
+          money 4
+      else
+        ifactor FEM7
+          money 8
+
+      ifactor FEM5
+      {
+        strength TOUGH
+        cactor BLOODYPOLE
+      }
+      else ifactor FEM6
+      {
+        cstat 0
+        cactor FEM6PAD
+      }
+      else
+        ifactor FEM8
+      {
+        strength TOUGH
+        cactor BLOODYPOLE
+      }
+      else
+      {
+        spritepal 6
+        soundonce LADY_SCREAM
+        ifactor NAKED1
+          debris SCRAP3 18
+        else
+          ifactor PODFEM1
+            debris SCRAP3 18
+        killit
+      }
+    }
+    else
+    {
+      ifwasweapon SHRINKSPARK
+      {
+        sound ACTOR_SHRINKING
+        move 0
+        action FEMSHRUNK
+        cstat 0
+        break
+      }
+      else
+        ifwasweapon GROWSPARK
+          sound EXPANDERHIT
+      ifactor FEM8
+        break
+
+      ifactor TOUGHGAL
+          state toughgalspeech
+      else sound SQUISHED
+
+      guts JIBS6 1
+    }
+  }
+ends
+
+state killme
+  ifinwater nullop
+  else
+    ifp pfacing
+      ifpdistl 1280
+        ifhitspace
+          soundonce KILLME
+ends
+
+state tipme
+  ifp pfacing
+    ifpdistl 1280
+      ifhitspace
+  {
+    tip
+    ifrnd 128
+      soundonce DUKE_TIP1
+    else
+      soundonce DUKE_TIP2
+    ifactor FEM1
+      action FEMDANCE1
+  }
+ends
+
+state toughgaltalk
+  ifp pfacing
+    ifpdistl 1280
+      ifhitspace
+        state toughgalspeech
+ends
+
+actor FEM1 TOUGH FEMANIMATE
+  state tipme
+  state femcode
+enda
+actor FEM2 TOUGH FEMANIMATE
+  state tipme
+  state femcode
+enda
+actor FEM3 TOUGH FEMANIMATE
+  state tipme
+  state femcode
+enda
+actor FEM4 TOUGH FEMANIMATE
+  state femcode
+enda
+actor FEM5 TOUGH FEMANIMATE
+  state killme
+  state femcode
+enda
+actor FEM6 TOUGH FEMANIMATE
+  state killme
+  state femcode
+enda
+actor FEM7 TOUGH FEMANIMATE
+  state tipme
+  state femcode
+enda
+actor FEM8 TOUGH FEMANIMATE
+  state femcode
+enda
+actor FEM9 TOUGH FEMANIMATE
+  state femcode
+enda
+actor FEM10 TOUGH FEMANIMATESLOW
+  state tipme
+  state femcode
+enda
+
+actor TOUGHGAL MANWOMANSTRENGTH TOUGHGALANIM
+  state toughgaltalk
+  state femcode
+enda
+
+actor NAKED1 TOUGH FEMANIMATE
+  state killme
+  state femcode
+enda
+actor PODFEM1 TOUGH FEMANIMATE
+  state killme
+  state femcode
+enda
+actor BLOODYPOLE TOUGH
+  state femcode
+enda
+actor STATUEFLASH
+  fall
+  ifcount 32
+    cactor STATUE
+enda
+actor STATUE
+  fall
+  ifp pfacing
+    ifpdistl 1280
+      ifhitspace
+  {
+    cactor STATUEFLASH
+    move 0
+  }
+enda
+
+actor MIKE
+  ifp pfacing
+    ifpdistl 1280
+      ifhitspace
+        mikesnd
+enda
+
+
+
+state troop_body_jibs
+  ifrnd 64
+    guts HEADJIB1 1
+  ifrnd 64
+    guts LEGJIB1 2
+  ifrnd 64
+    guts ARMJIB1 1
+  ifrnd 48
+    spawn BLOODPOOL
+ends
+
+state liz_body_jibs
+  ifrnd 64
+    guts LIZMANHEAD1 1
+  ifrnd 64
+    guts LIZMANLEG1 2
+  ifrnd 64
+    guts LIZMANARM1 1
+  ifrnd 48
+    spawn BLOODPOOL
+ends
+
+action BLOODFRAMES 0 4 1 1 15
+actor BLOOD 0 BLOODFRAMES
+  sizeto 72 72 sizeto 72 72 sizeto 72 72
+  ifpdistg 3144 killit
+  ifactioncount 4 killit
+enda
+
+action EGGOPEN1 1 1 1 1 4
+action EGGOPEN2 2 1 1 1 4
+action EGGOPEN3 2 1 1 1 4
+action EGGWAIT  0
+action EGGFROZEN 1
+action EGGGROW 1
+action EGGSHRUNK 1
+
+actor EGG TOUGH
+  fall
+  ifaction 0
+  {
+    ifcount 64
+    {
+      ifrnd 128
+      {
+        action EGGWAIT
+        move 0
+      }
+      else
+      {
+        sound SLIM_HATCH
+        action EGGOPEN1
+      }
+    }
+  }
+  else
+    ifaction EGGOPEN1
+      ifactioncount 4
+        action EGGOPEN2
+  else
+    ifaction EGGOPEN2
+      ifactioncount 4
+    {
+      spawn GREENSLIME
+      action EGGOPEN3
+    }
+  else
+    ifaction EGGGROW
+      state genericgrowcode
+  else
+    ifaction EGGSHRUNK
+      state genericshrunkcode
+  else
+    ifaction EGGFROZEN
+  {
+    ifcount THAWTIME
+    {
+      action 0
+      getlastpal
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      lotsofglass 30
+
+      sound GLASS_BREAKING
+      ifrnd 84
+        spawn BLOODPOOL
+
+      addkills 1
+      killit
+    }
+
+    // ifp pducking
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+
+    break
+  }
+
+  ifhitweapon
+  {
+    ifdead
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        sound SOMETHINGFROZE
+        spritepal 1
+        move 0
+        action EGGFROZEN
+        strength 0
+        break
+      }
+      else
+        ifwasweapon GROWSPARK
+      {
+        cstat 0
+        move 0
+        sound ACTOR_GROWING
+        action EGGGROW
+        break
+      }
+
+      addkills 1
+
+      sound SQUISHED
+
+      state standard_jibs
+      killit
+    }
+    else
+      ifwasweapon SHRINKSPARK
+      {
+        move 0
+        sound ACTOR_SHRINKING
+        action EGGSHRUNK
+        break
+      }
+
+      ifwasweapon GROWSPARK
+        sound EXPANDERHIT
+  }
+  else
+    ifaction EGGWAIT
+  {
+    ifcount 512
+      ifrnd 2
+    {
+      ifaction EGGSHRUNK
+        break
+      sound SLIM_HATCH
+      action EGGOPEN1
+    }
+  }
+
+enda
+
+actor KNEE KNEE_WEAPON_STRENGTH enda
+actor SPIT SPIT_WEAPON_STRENGTH enda
+actor CHAINGUN CHAINGUN_WEAPON_STRENGTH enda
+actor SHOTGUN SHOTGUN_WEAPON_STRENGTH enda
+actor FIRELASER FIRELASER_WEAPON_STRENGTH enda
+actor HEAVYHBOMB HANDBOMB_WEAPON_STRENGTH enda
+actor BOUNCEMINE BOUNCEMINE_WEAPON_STRENGTH enda
+actor MORTER MORTER_WEAPON_STRENGTH enda
+actor SHRINKSPARK SHRINKER_WEAPON_STRENGTH enda
+
+actor GROWSPARK GROWSPARK_WEAPON_STRENGTH
+  ifcount 18
+    killit
+  else
+    ifcount 9
+  {
+    sizeto 0 0
+    sizeto 0 0
+    sizeto 0 0
+    sizeto 0 0
+  }
+  else
+  {
+    sizeto 28 28
+    sizeto 28 28
+    sizeto 28 28
+    sizeto 28 28
+  }
+enda
+
+actor RPG RPG_WEAPON_STRENGTH enda
+actor FREEZEBLAST FREEZETHROWER_WEAPON_STRENGTH enda
+actor DEVISTATORBLAST FREEZETHROWER_WEAPON_STRENGTH enda
+actor COOLEXPLOSION1 COOL_EXPLOSION_STRENGTH enda
+actor TRIPBOMB TRIPBOMB_STRENGTH enda
+
+action WEAP2FRAMES 0  4  1  1  6
+actor SHOTSPARK1 PISTOL_WEAPON_STRENGTH WEAP2FRAMES
+  ifdead
+    killit
+  ifactioncount 4
+    killit
+  else
+  {
+    ifactioncount 3
+    {
+      ifinwater
+      spawn WATERBUBBLE
+    }
+    else
+      ifcount 2 nullop
+      else
+        ifonwater
+          spawn WATERSPLASH2
+  }
+enda
+
+state standard_pjibs
+  guts JIBS1 1
+  guts JIBS3 2
+  guts JIBS4 1
+  guts JIBS5 1
+  guts JIBS6 2
+  guts DUKETORSO 1
+  guts DUKELEG 2
+  guts DUKEGUN 1
+  ifrnd 16 money 1
+ends
+
+move DUKENOTMOVING
+state handle_dead_dukes
+  fall
+  ifmove 0   // 1st time initializiation...
+  {
+    ifrnd 128
+      cstat 4
+    else
+      cstat 0
+    move DUKENOTMOVING
+  }
+
+  ifsquished
+  {
+    sound SQUISHED
+    state random_ooz
+    killit
+  }
+  else
+    ifcount 1024
+      ifpdistg 4096
+        killit
+  else
+  {
+    strength 0
+    ifhitweapon
+      ifwasweapon RADIUSEXPLOSION
+    {
+      state standard_jibs
+      killit
+    }
+  }
+ends
+
+action PLYINGFRAMES 0 1 0 1 1
+actor DUKELYINGDEAD 0 PLYINGFRAMES
+  state handle_dead_dukes
+enda
+
+action PGROWING   0
+action PSTAND     0   1   5   1  1
+action PEXPLODE   106   5   1   1   10
+action PEXPLODEAD   113   1   1
+action PJPHOUVER  15   1   5   1
+action PWALK    20   4   5   1   16
+action PRUN     20   4   5   1   10
+action PWALKBACK  45   4   5  -1   16
+action PRUNBACK   45   4   5  -1   10
+action PJUMPING   50   4   5   1   30
+action PFALLING   65   1   5
+action PDUCKING   86   1   5
+action PCRAWLING  86   3   5   1   20
+action PAKICKING  40   2   5   1   25
+action PFLINTCHING  106  1   1   1   10
+action PTHROWNBACK  106  5   1   1   18
+action PFROZEN     20  1   5
+action PLYINGDEAD   113  1   1
+
+action PSWIMMINGGO   375   1   5   1   10
+action PSWIMMING   375   4   5   1   13
+action PSWIMMINGWAIT 395   1   5   1   13
+action PTREDWATER  395   2   5   1   17
+
+move PSTOPED
+move PSHRINKING // used as a var only
+
+state check_pstandard
+  ifp pwalking
+    action PWALK
+  else
+    ifp pkicking
+      action PAKICKING
+  else
+    ifp pwalkingback
+      action PWALKBACK
+  else
+    ifp prunning
+      action PRUN
+  else
+    ifp prunningback
+      action PRUNBACK
+  else
+    ifp pjumping
+      action PJUMPING
+  else
+    ifp pducking
+      action PDUCKING
+ends
+
+
+
+
+
+actor APLAYER MAXPLAYERHEALTH PSTAND 0 0
+
+  ifaction 0
+    action PSTAND
+
+  ifaction PFROZEN
+  {
+    cstat 257
+
+    fall
+
+    palfrom 16 0 0 24
+
+    ifmove 0
+    {
+      ifhitweapon
+      {
+        ifwasweapon FREEZEBLAST
+          break
+        lotsofglass 60
+        ifrnd 84
+          spawn BLOODPOOL
+
+        sound GLASS_BREAKING
+        spawn ATOMICHEALTH
+
+        getlastpal
+
+        move 1
+        break
+      }
+    }
+    else
+    {
+      cstat 32768
+      quote 13
+      ifhitspace
+      {
+        action PSTAND
+        resetplayer
+      }
+      break
+    }
+
+    ifactioncount THAWTIME
+    {
+      getlastpal
+      strength 1
+      move 0
+      action PSTAND
+    }
+    else
+      ifactioncount FROZENDRIPTIME
+    {
+      ifrnd 32
+      spawn WATERDRIP
+    }
+
+    ifp pfacing   // assumes another other player  (multiplayer)
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+
+    break
+  }
+
+  ifdead
+  {
+    ifaction PGROWING
+    {
+      ifmove 1
+      {
+        quote 13
+        ifhitspace
+        {
+          action 0
+          resetplayer
+        }
+        break
+      }
+      else
+      {
+        ifcount 32
+        {
+          sound SQUISHED
+          palfrom 48 64
+
+          state standard_pjibs
+
+          guts JIBS4 20
+          guts JIBS6 20
+          move 1
+          cstat 32768
+          tossweapon
+
+          hitradius 2048 60 70 80 90
+
+        }
+        else
+          sizeto MAXXSTRETCH MAXYSTRETCH
+      }
+      break
+    }
+
+    ifsquished
+      palfrom 32 63 63 63
+    else
+      fall
+
+    ifactioncount 7
+      move 0
+    else
+      ifactioncount 6
+    {
+      ifmultiplayer nullop
+      else
+      {
+        ifrnd 32
+          sound DUKE_KILLED5
+        else
+          ifrnd 32
+            sound DUKE_KILLED3
+        else
+          ifrnd 32
+            sound DUKE_KILLED1
+        else
+          ifrnd 32
+            sound DUKE_KILLED2
+      }
+    }
+
+    ifaction PLYINGDEAD
+    {
+      ifactioncount 3
+        move PSTOPED
+      quote 13
+      ifhitspace
+      {
+        action PSTAND
+        spawn DUKELYINGDEAD
+        resetplayer
+      }
+      break
+    }
+
+    ifaction PTHROWNBACK
+    {
+      ifactioncount 5
+      {
+        spawn BLOODPOOL
+        action PLYINGDEAD
+      }
+      else
+        ifactioncount 1
+          move 0
+      break
+    }
+
+    ifaction PEXPLODEAD
+    {
+      quote 13
+      ifhitspace
+      {
+        resetplayer
+        action PSTAND
+      }
+      break
+    }
+    ifaction PEXPLODE
+    {
+      ifactioncount 5
+      {
+        action PEXPLODEAD
+        spawn BLOODPOOL
+      }
+      break
+    }
+
+    ifp pshrunk
+    {
+      state standard_pjibs
+      spawn BLOODPOOL
+
+      sound SQUISHED
+      sound DUKE_DEAD
+
+      cstat 32768         // Hide the sprite
+
+      action PLYINGDEAD
+    }
+    else
+    {
+      ifinwater
+      {
+        action PLYINGDEAD
+        spawn WATERBUBBLE
+        spawn WATERBUBBLE
+      }
+      else
+      {
+        action PEXPLODE
+        state standard_pjibs
+        cstat 32768
+        sound SQUISHED
+        sound DUKE_DEAD
+      }
+    }
+
+    tossweapon
+
+    break
+  }
+
+  ifsquished
+  {
+    strength -1
+    sound SQUISHED
+    state random_ooz
+    break
+  }
+
+  ifp ponsteroids
+  {
+    ifp pstanding nullop
+    else
+      spawn FRAMEEFFECT1
+  }
+
+  ifmove PSHRINKING
+  {
+    ifcount 32
+    {
+      ifcount SHRUNKDONECOUNT
+      {
+        move 0
+        cstat 257
+      }
+      else
+        ifcount SHRUNKCOUNT
+      {
+        sizeto 42 36
+        ifgapzl 24
+        {
+          strength 0
+          sound SQUISHED
+          palfrom 48 64
+          break
+        }
+      }
+      else
+        ifp ponsteroids
+          count SHRUNKCOUNT
+    }
+    else
+    {
+      ifp ponsteroids
+        count SHRUNKCOUNT
+      else
+      {
+        sizeto 8 9
+        spawn FRAMEEFFECT1
+      }
+    }
+  }
+  else ifhitweapon
+  {
+    ifdead
+    {
+      ifmultiplayer
+        sound DUKE_KILLED4
+
+      ifwasweapon GROWSPARK
+      {
+        palfrom 48 48
+        action PGROWING
+        count 0
+        move 0
+        sound ACTOR_GROWING
+        cstat 0
+        break
+      }
+    }
+    else
+    {
+      ifmultiplayer
+      {
+        ifphealthl YELLHURTSOUNDSTRENGTHMP
+        {
+          ifrnd 64
+            sound DUKE_LONGTERM_PAIN2
+          else
+            ifrnd 64
+              sound DUKE_LONGTERM_PAIN3
+          else
+            ifrnd 64
+              sound DUKE_LONGTERM_PAIN4
+          else
+            sound DUKE_DEAD
+        }
+        else
+        {
+          ifrnd 64
+            sound DUKE_LONGTERM_PAIN5
+          else ifrnd 64
+            sound DUKE_LONGTERM_PAIN6
+          else ifrnd 64
+            sound DUKE_LONGTERM_PAIN7
+          else
+            sound DUKE_LONGTERM_PAIN8
+        }
+      }
+      else
+      {
+        ifphealthl YELLHURTSOUNDSTRENGTH
+        {
+          ifrnd 74
+            sound DUKE_LONGTERM_PAIN2
+          else
+            ifrnd 8
+              sound DUKE_LONGTERM_PAIN3
+          else
+            sound DUKE_LONGTERM_PAIN4
+        }
+        ifrnd 128
+          sound DUKE_LONGTERM_PAIN
+      }
+    }
+    ifstrength TOUGH
+    {
+      state headhitstate
+      sound DUKE_GRUNT
+      ifp pstanding
+        action PFLINTCHING
+    }
+
+    ifwasweapon RPG
+    {
+      ifrnd 32
+        spawn BLOOD
+      ifdead
+        state standard_pjibs
+      palfrom 48 52
+      break
+    }
+    ifwasweapon RADIUSEXPLOSION
+    {
+      ifrnd 32
+        spawn BLOOD
+      ifdead
+        state standard_pjibs
+      palfrom 48 52
+      break
+    }
+    ifwasweapon FIREEXT
+    {
+      ifrnd 32
+        spawn BLOOD
+      ifdead
+        state standard_pjibs
+      palfrom 48 52
+      break
+    }
+    ifwasweapon GROWSPARK
+    {
+      palfrom 48 52
+      sound EXPANDERHIT
+      break
+    }
+    ifwasweapon SHRINKSPARK
+    {
+      palfrom 48 0 48
+      move PSHRINKING // used as a var only.
+      sound ACTOR_SHRINKING
+      cstat 0
+      break
+    }
+    ifwasweapon SHOTSPARK1
+      palfrom 24 48
+    ifwasweapon FREEZEBLAST
+    {
+      palfrom 48 0 0 48
+      ifdead
+      {
+        sound SOMETHINGFROZE
+        spritepal 1
+        move 0
+        action PFROZEN
+        break
+      }
+    }
+    ifwasweapon COOLEXPLOSION1
+      palfrom 48 48 0 48
+    ifwasweapon KNEE
+      palfrom 16 32
+    ifwasweapon FIRELASER
+      palfrom 32 32
+
+    ifdead
+    {
+      action PTHROWNBACK
+      tossweapon
+    }
+
+    state random_wall_jibs
+
+    break
+  }
+
+  ifaction PFLINTCHING
+  {
+    ifactioncount 2
+      action PSTAND
+    break
+  }
+
+  ifinwater
+  {
+    ifaction PTREDWATER
+    {
+      ifp pwalking prunning
+        action PSWIMMINGGO
+    }
+    else
+      ifp pstanding pwalkingback prunningback
+        action PTREDWATER
+    else
+    {
+      ifaction PSWIMMING
+      {
+        ifrnd 4
+          spawn WATERBUBBLE
+        ifactioncount 4
+          action PSWIMMINGWAIT
+      }
+      else
+        ifaction PSWIMMINGWAIT
+      {
+        ifactioncount 2
+          action PSWIMMINGGO
+      }
+      else
+        ifaction PSWIMMINGGO
+      {
+        ifactioncount 2
+          action PSWIMMING
+      }
+      else
+        action PTREDWATER
+    }
+
+    ifrnd 4
+      spawn WATERBUBBLE // For effect
+
+    break
+  }
+  else ifp pjetpack
+  {
+    ifaction PJPHOUVER
+    {
+      ifactioncount 4
+        resetactioncount
+    }
+    else
+      action PJPHOUVER
+    break
+  }
+  else
+  {
+    ifaction PTREDWATER
+      action PSTAND
+    ifaction PSWIMMING
+      action PSTAND
+    ifaction PSWIMMINGWAIT
+      action PSTAND
+    ifaction PSWIMMINGGO
+      action PSTAND
+    ifaction PJPHOUVER
+      action PFALLING
+  }
+
+  ifaction PFALLING
+  {
+    ifp ponground
+      action PSTAND
+    else
+    {
+      ifp pfalling
+        break
+      else
+        state check_pstandard
+    }
+  }
+
+  ifaction PDUCKING
+  {
+    ifgapzl 48
+    {
+      ifp pwalking pwalkingback prunning prunningback
+        action PCRAWLING
+    }
+    else ifp pducking
+    {
+      ifp pwalking pwalkingback prunning prunningback
+        action PCRAWLING
+    }
+    else
+    {
+      ifp pstanding
+        action PSTAND
+      else
+        state check_pstandard
+    }
+  }
+
+  else ifaction PCRAWLING
+  {
+    ifgapzl 48
+    {
+      ifp pstanding
+        action PCRAWLING
+    }
+    else
+      ifp pducking
+    {
+      ifp pstanding
+        action PDUCKING
+    }
+    else
+    {
+      ifp pstanding
+        action PSTAND
+      else
+        state check_pstandard
+    }
+  }
+  else
+    ifgapzl 48
+      action PDUCKING
+
+  else
+    ifaction PJUMPING
+  {
+    ifp ponground
+      action PSTAND
+    else
+      ifactioncount 4
+        ifp pfalling
+          action PFALLING
+  }
+
+  ifp pfalling
+    action PFALLING
+  else
+    ifaction PSTAND
+      state check_pstandard
+  else
+    ifaction PAKICKING
+  {
+    ifactioncount 2
+      action PSTAND
+    break
+  }
+  else
+    ifaction PWALK
+  {
+    ifp pfalling
+      action PFALLING
+    else
+      ifp pstanding
+        action PSTAND
+    else
+      ifp prunning
+        action PRUN
+    else
+      ifp pwalkingback
+        action PWALKBACK
+    else
+      ifp prunningback
+        action PRUNBACK
+    else
+      ifp pjumping
+        action PJUMPING
+    else
+      ifp pducking
+        action PDUCKING
+  }
+
+  else
+    ifaction PRUN
+  {
+    ifp pstanding
+      action PSTAND
+    else
+      ifp pwalking
+        action PWALK
+    else
+      ifp pwalkingback
+        action PWALKBACK
+    else
+      ifp prunningback
+        action PRUNBACK
+    else
+      ifp pjumping
+        action PJUMPING
+    else
+      ifp pducking
+        action PDUCKING
+  }
+
+  else
+    ifaction PWALKBACK
+  {
+    ifp pstanding
+      action PSTAND
+    else
+      ifp pwalking
+        action PWALK
+    else
+      ifp prunning
+        action PRUN
+    else
+      ifp prunningback
+        action PRUNBACK
+    else
+      ifp pjumping
+        action PJUMPING
+    else
+      ifp pducking
+        action PDUCKING
+  }
+
+  else
+    ifaction PRUNBACK
+  {
+    ifp pstanding
+      action PSTAND
+    else
+      ifp pwalking
+        action PWALK
+    else
+      ifp prunning
+        action PRUN
+    else
+      ifp pwalkingback
+        action PWALKBACK
+    else
+      ifp pjumping
+        action PJUMPING
+    else
+      ifp pducking
+        action PDUCKING
+  }
+enda
+
+
+
+
+
+actor ORGANTIC TURRETSTRENGTH
+  ifcount 48
+    resetcount
+  else
+  {
+    ifcount 32
+    sizeto 32 32
+  }
+  else
+    ifcount 16
+    {
+      sizeto 48 18
+      ifpdistl 2048
+      {
+        sound TURR_ATTACK
+        addphealth -2
+        palfrom 32 16
+      }
+    }
+  ifhitweapon
+  {
+    ifdead
+    {
+      addkills 1
+      sound TURR_DYING
+      guts JIBS5 10
+      killit
+    }
+    sound TURR_PAIN
+    break
+  }
+  ifrnd 1
+    soundonce TURR_ROAM
+enda
+
+state rf
+  ifrnd 128
+    cstat 4
+  else
+    cstat 0
+ends
+
+
+//
+//
+//    TROOP/LIZTROOP CODE
+//
+//
+
+action ATROOPSTAND     0  1  5  1  1
+action ATROOPGROW    0  1  5  1  1
+action ATROOPSTAYSTAND  -2  1  5  1  1
+action ATROOPWALKING   0  4  5  1   12
+action ATROOPWALKINGBACK 15   4  5   -1   12
+action ATROOPRUNNING   0  4  5  1  8
+action ATROOPSHOOT    35  1  5  1   30
+action ATROOPJETPACK  40  1  5  1  1
+action ATROOPJETPACKILL 40  2  5  1   50
+action ATROOPFLINTCH  50  1  1  1  6
+action ATROOPDYING    50  5  1  1   16
+action ATROOPDEAD     54
+action ATROOPPLAYDEAD   54
+action ATROOPSUFFERDEAD 58  2  1   -4   24
+action ATROOPSUFFERING  59  2  1  1   21
+action ATROOPDUCK     64  1  5  1  3
+action ATROOPDUCKSHOOT  64  2  5  1   25
+action ATROOPABOUTHIDE  74  1  1  1   25
+action ATROOPHIDE     79  1  1  1   25
+action ATROOPREAPPEAR   74  1  1  1   25
+action ATROOPFROZEN    0  1  5
+
+move TROOPWALKVELS 72
+move TROOPWALKVELSBACK -72
+move TROOPJETPACKVELS 64 -84
+move TROOPJETPACKILLVELS 192 -38
+move TROOPRUNVELS 108
+move TROOPSTOPPED
+move DONTGETUP
+move SHRUNKVELS 32
+
+ai AITROOPSEEKENEMY  ATROOPWALKING   TROOPWALKVELS seekplayer
+ai AITROOPSEEKPLAYER ATROOPWALKING   TROOPWALKVELS seekplayer
+ai AITROOPFLEEING  ATROOPWALKING   TROOPWALKVELS fleeenemy
+ai AITROOPFLEEINGBACK ATROOPWALKINGBACK   TROOPWALKVELSBACK faceplayer
+ai AITROOPDODGE    ATROOPWALKING   TROOPRUNVELS  dodgebullet
+ai AITROOPSHOOTING   ATROOPSHOOT   TROOPSTOPPED  faceplayer
+ai AITROOPDUCKING  ATROOPDUCK    TROOPSTOPPED  faceplayer
+ai AITROOPJETPACK  ATROOPJETPACK   TROOPJETPACKVELS seekplayer
+ai AITROOPSHRUNK   ATROOPWALKING   SHRUNKVELS fleeenemy
+ai AITROOPHIDE     ATROOPABOUTHIDE TROOPSTOPPED faceplayer
+ai AITROOPGROW     ATROOPGROW    DONTGETUP faceplayerslow
+
+state troophidestate
+  ifaction ATROOPREAPPEAR
+  {
+    ifactioncount 2
+    {
+      sound TELEPORTER
+      ai AITROOPSHOOTING
+      cstat 257
+    }
+    else
+    {
+      sizeto 41 40
+      sizeto 41 40
+      sizeto 41 40
+      sizeto 41 40
+      spawn FRAMEEFFECT1
+    }
+  }
+  else
+    ifaction ATROOPWALKING
+  {
+    ifpdistl 2448
+      ifpdistg 1024
+    {
+      ifceilingdistl 48
+        break
+      ifp pfacing
+        break
+
+      ifgapzl 64 nullop
+      else
+        ifawayfromwall
+      {
+        spawn TRANSPORTERSTAR
+        action ATROOPREAPPEAR
+        move 0
+        break
+      }
+    }
+  }
+  else
+    ifaction ATROOPHIDE
+  {
+    ifactioncount 2
+    {
+      spawn TRANSPORTERSTAR
+      sound TELEPORTER
+      action ATROOPWALKING
+      move TROOPWALKVELS faceplayer
+      cstat 32768
+    }
+    else
+    {
+      sizeto 4 40
+      sizeto 4 40
+      sizeto 4 40
+      sizeto 4 40
+      spawn FRAMEEFFECT1
+    }
+  }
+  else
+    ifaction ATROOPABOUTHIDE
+      ifactioncount 2
+    {
+      action ATROOPHIDE
+      cstat 0
+    }
+ends
+
+
+state troopgunnashoot
+  ifp palive
+  {
+    ifpdistl 1024
+      ai AITROOPSHOOTING
+    else
+      ifactornotstayput
+    {
+      ifactioncount 12
+        ifrnd 16
+          ifcanshoottarget
+      {
+        ifspritepal 21
+          ifrnd 4
+            ifpdistg 4096
+              ai AITROOPHIDE
+        else
+        {
+          ifpdistl 1100
+            ai AITROOPFLEEING
+          else
+          {
+            ifpdistl 4096
+              ifcansee
+                ifcanshoottarget
+                  ai AITROOPSHOOTING
+            else
+            {
+              move TROOPRUNVELS seekplayer
+              action ATROOPRUNNING
+            }
+          }
+        }
+      }
+    }
+    else
+      ifcount 26
+        ifrnd 32
+          ai AITROOPSHOOTING
+  }
+ends
+
+state troopseekstate
+  state troopgunnashoot
+  ifinwater
+  {
+    ai AITROOPJETPACK
+    break
+  }
+  ifcansee
+  {
+    ifmove TROOPRUNVELS
+      ifpdistl 1596
+        ai AITROOPDUCKING
+    ifp phigher
+    {
+      ifceilingdistl 128 nullop
+      else
+        ifactornotstayput
+          ai AITROOPJETPACK
+      break
+    }
+    else
+      ifrnd 2
+    {
+      ifspritepal 21
+        ifpdistg 1596
+      {
+        ai AITROOPHIDE
+        break
+      }
+      ifbulletnear
+      {
+        ifrnd 128
+          ai AITROOPDODGE
+        else
+          ai AITROOPDUCKING
+        break
+      }
+    }
+  }
+  ifnotmoving
+  {
+    ifrnd 32
+      operate
+    else
+      ifcount 32
+        ifp palive
+          ifcansee
+            ifcanshoottarget
+              ai AITROOPSHOOTING
+  }
+  ifrnd 1
+  {
+    ifrnd 128
+      soundonce PRED_ROAM
+    else
+      soundonce PRED_ROAM2
+  }
+ends
+
+state troopduckstate
+  ifaction ATROOPDUCK
+  {
+    ifactioncount 8
+    {
+      ifp palive
+      {
+        ifrnd 128
+          action ATROOPDUCKSHOOT
+      }
+      else
+        ifmove DONTGETUP
+          break
+        else
+          ai AITROOPSEEKPLAYER
+    }
+  }
+  else
+    ifaction ATROOPDUCKSHOOT
+  {
+    ifcount 64
+    {
+      ifmove DONTGETUP
+        resetcount
+      else
+      {
+        ifpdistl 1100
+          ai AITROOPFLEEING
+        else
+          ai AITROOPSEEKPLAYER
+      }
+    }
+    else
+      ifactioncount 2
+      {
+        ifcanshoottarget
+        {
+          sound PRED_ATTACK
+          resetactioncount
+          shoot FIRELASER
+        }
+        else ai AITROOPSEEKPLAYER
+      }
+  }
+ends
+
+state troopshootstate
+  ifactioncount 2
+  {
+    ifcanshoottarget
+    {
+      shoot FIRELASER
+      sound PRED_ATTACK
+      resetactioncount
+      ifrnd 128
+        ai AITROOPSEEKPLAYER
+      ifcount 24
+      {
+        ifrnd 96
+          ifpdistg 2048
+            ai AITROOPSEEKPLAYER
+          else
+          {
+            ifpdistg 1596
+              ai AITROOPFLEEING
+            else
+              ai AITROOPFLEEINGBACK
+          }
+      }
+    }
+    else
+      ai AITROOPSEEKPLAYER
+  }
+ends
+
+state troopfleestate
+  ifactioncount 7
+  {
+    ifpdistg 3084
+    {
+      ai AITROOPSEEKPLAYER
+      break
+    }
+    else
+      ifrnd 32
+        ifp palive
+          ifcansee
+            ifcanshoottarget
+      {
+        ifrnd 128
+          ai AITROOPDUCKING
+        else
+          ai AITROOPSHOOTING
+          break
+      }
+  }
+  ifnotmoving
+  {
+    ifrnd 32
+      operate
+    else
+      ifcount 32
+        ifp palive
+          ifcansee
+            ifcanshoottarget
+      {
+        ifrnd 128
+          ai AITROOPSHOOTING
+        else
+          ai AITROOPDUCKING
+      }
+  }
+ends
+
+state troopdying
+  iffloordistl 32
+  {
+    ifactioncount 5
+    {
+      cstat 0
+      iffloordistl 8
+      sound THUD
+      ifrnd 64
+        spawn BLOODPOOL
+      state rf
+      strength 0
+      move TROOPSTOPPED
+      action ATROOPDEAD
+    }
+    break
+  }
+  else
+  {
+    state rf
+    move 0
+    action ATROOPDYING
+  }
+ends
+
+state checktroophit
+  ifaction ATROOPSUFFERING
+  {
+    stopsound LIZARD_BEG
+    sound PRED_DYING
+    cstat 0
+    strength 0
+    action ATROOPSUFFERDEAD
+    break
+  }
+  ifdead
+  {
+    ifwasweapon FREEZEBLAST
+    {
+      sound SOMETHINGFROZE
+      spritepal 1
+      move 0
+      action ATROOPFROZEN
+      strength 0
+      break
+    }
+
+    state drop_ammo
+    state random_wall_jibs
+
+    ifwasweapon GROWSPARK
+    {
+      cstat 0
+      sound ACTOR_GROWING
+      ai AITROOPGROW
+      break
+    }
+
+    addkills 1
+
+    ifwasweapon RPG
+    {
+      sound SQUISHED
+      state troop_body_jibs
+      state standard_jibs
+      killit
+    }
+    else
+      ifwasweapon RADIUSEXPLOSION
+    {
+      sound SQUISHED
+      state troop_body_jibs
+      state standard_jibs
+      killit
+    }
+    else
+    {
+      sound PRED_DYING
+      ifrnd 32
+        iffloordistl 32
+      {
+        sound LIZARD_BEG
+        spawn BLOODPOOL
+        strength 0
+        move 0
+        action ATROOPSUFFERING
+        break
+      }
+      action ATROOPDYING
+      break
+    }
+  }
+  else
+  {
+    state random_wall_jibs
+    sound PRED_PAIN
+
+    ifwasweapon SHRINKSPARK
+    {
+      sound ACTOR_SHRINKING
+      ai AITROOPSHRUNK
+    }
+    else
+      ifwasweapon GROWSPARK
+        sound EXPANDERHIT
+    else
+      iffloordistl 32
+        ifrnd 96
+          action ATROOPFLINTCH
+  }
+ends
+
+state troopjetpackstate
+  ifaction ATROOPJETPACKILL
+  {
+    ifcansee
+      ifactioncount 2
+    {
+      resetactioncount
+      sound PRED_ATTACK
+      shoot FIRELASER
+    }
+
+    ifp phigher
+      ai AITROOPJETPACK
+    else
+      ifinwater
+        ai AITROOPJETPACK
+    else
+      ifcount 26
+        iffloordistl 32
+          ai AITROOPSEEKPLAYER
+  }
+  else
+    ifcount 48
+      ifcansee
+  {
+    action ATROOPJETPACKILL
+    move TROOPJETPACKILLVELS
+    seekplayer
+  }
+ends
+
+state checksquished
+  ifsquished
+  {
+    addkills 1
+    sound SQUISHED
+    state standard_jibs
+    state random_ooz
+    killit
+  }
+ends
+
+state troopsufferingstate
+  ifactioncount 2
+  {
+    ifrnd 16
+      spawn WATERDRIP
+    ifactioncount 14
+    {
+      stopsound LIZARD_BEG
+      cstat 0
+      strength 0
+      action ATROOPSUFFERDEAD
+      break
+    }
+  }
+ends
+
+state troopshrunkstate
+  ifcount SHRUNKDONECOUNT
+    ai AITROOPSEEKENEMY
+  else
+    ifcount SHRUNKCOUNT
+      sizeto 48 40
+  else
+    state genericshrunkcode
+ends
+
+
+state troopcode fall
+  ifinwater
+    ifrnd 1
+      spawn WATERBUBBLE
+  ifaction ATROOPSTAND
+  {
+    ifrnd 192
+      ai AITROOPSHOOTING
+    else
+      ai AITROOPSEEKPLAYER
+  }
+  else
+    ifaction ATROOPFROZEN
+  {
+    ifcount THAWTIME
+    {
+      ai AITROOPSEEKENEMY
+      getlastpal
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      addkills 1
+
+      ifrnd 84
+        spawn BLOODPOOL
+      lotsofglass 30
+      sound GLASS_BREAKING
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  else ifaction ATROOPPLAYDEAD
+  {
+    ifhitweapon
+    {
+      ifwasweapon RADIUSEXPLOSION
+      {
+        sound SQUISHED
+        state troop_body_jibs
+        state standard_jibs
+        killit
+      }
+      break
+    }
+    else
+      state checksquished
+
+    ifcount PLAYDEADTIME
+    {
+      addkills -1
+      soundonce PRED_ROAM
+      cstat 257
+      strength 1
+      ai AITROOPSHOOTING
+    }
+    else
+      ifp pfacing
+        resetcount
+
+    break
+  }
+  else
+    ifaction ATROOPDEAD
+  {
+    strength 0
+    ifrespawn
+      ifcount RESPAWNACTORTIME
+    {
+      spawn TRANSPORTERSTAR
+      cstat 257
+      strength TROOPSTRENGTH
+      ai AITROOPSEEKENEMY
+    }
+    ifhitweapon
+    {
+      ifwasweapon RADIUSEXPLOSION
+      {
+        sound SQUISHED
+        state troop_body_jibs
+        state standard_jibs
+        killit
+      }
+      break
+    }
+    else
+      state checksquished
+    break
+  }
+  else
+    ifaction ATROOPSUFFERDEAD
+  {
+    ifactioncount 2
+    {
+      ifrnd 64
+      {
+        resetcount
+        action ATROOPPLAYDEAD
+      }
+      else
+      {
+        soundonce PRED_DYING
+        action ATROOPDEAD
+      }
+    }
+  }
+  else
+    ifaction ATROOPDYING
+  {
+    state troopdying
+    break
+  }
+  else
+    ifaction ATROOPSUFFERING
+  {
+    state troopsufferingstate
+    ifhitweapon
+      state checktroophit
+    break
+  }
+  else
+    ifaction ATROOPFLINTCH
+  {
+    ifactioncount 4
+      ai AITROOPSEEKENEMY
+  }
+  else
+  {
+    ifai AITROOPSEEKPLAYER
+      state troopseekstate
+    else
+      ifai AITROOPJETPACK
+    {
+      state troopjetpackstate
+      ifinwater nullop
+      else
+        soundonce DUKE_JETPACK_IDLE
+    }
+    else
+      ifai AITROOPSEEKENEMY
+        state troopseekstate
+    else
+      ifai AITROOPSHOOTING
+        state troopshootstate
+    else
+      ifai AITROOPFLEEING
+        state troopfleestate
+    else
+      ifai AITROOPFLEEINGBACK
+        state troopfleestate
+    else
+      ifai AITROOPDODGE
+        state troopseekstate
+    else
+      ifai AITROOPDUCKING
+        state troopduckstate
+    else
+      ifai AITROOPSHRUNK
+        state troopshrunkstate
+    else
+      ifai AITROOPGROW
+        state genericgrowcode
+    else
+      ifai AITROOPHIDE
+    {
+      state troophidestate
+      break
+    }
+  }
+
+  ifhitweapon
+    state checktroophit
+  else
+    state checksquished
+ends
+
+state checktrooppalette
+  ifai 0
+  {
+    ifspritepal 0
+        nullop
+    else
+        ifspritepal 21
+          addstrength TROOPSTRENGTH // Double the hitpoint vals
+  }
+ends
+
+
+actor LIZTROOPJETPACK TROOPSTRENGTH
+  state checktrooppalette
+  ai AITROOPJETPACK
+  cactor LIZTROOP
+enda
+
+actor LIZTROOPDUCKING TROOPSTRENGTH
+  state checktrooppalette
+  ai AITROOPDUCKING
+  cactor LIZTROOP
+  ifgapzl 48
+    move DONTGETUP
+enda
+
+actor LIZTROOPSHOOT TROOPSTRENGTH ATROOPSTAND
+  state checktrooppalette
+  ai AITROOPSHOOTING
+  cactor LIZTROOP
+enda
+actor LIZTROOPSTAYPUT TROOPSTRENGTH ATROOPSTAYSTAND
+  state checktrooppalette
+  ai AITROOPSEEKPLAYER
+  cactor LIZTROOP
+enda
+actor LIZTROOPRUNNING TROOPSTRENGTH ATROOPSTAND
+  state checktrooppalette
+  ai AITROOPSEEKPLAYER
+  cactor LIZTROOP
+enda
+actor LIZTROOPONTOILET TROOPSTRENGTH
+  ifcount 24
+  {
+    sound FLUSH_TOILET
+    operate
+    ai AITROOPSEEKPLAYER
+    cactor LIZTROOP
+  }
+  else
+    ifcount 2
+      nullop
+  else
+    state checktrooppalette
+enda
+
+actor LIZTROOPJUSTSIT TROOPSTRENGTH
+  ifcount 30
+  {
+    operate
+    ai AITROOPSEEKPLAYER
+    cactor LIZTROOP
+  }
+  else
+    ifcount 2
+      nullop
+  else
+    state checktrooppalette
+enda
+
+
+actor LIZTROOP TROOPSTRENGTH ATROOPSTAND
+  state checktrooppalette
+  state troopcode
+enda
+
+action ALIZSTAND     0
+action ALIZWALKING     0   4  5  1  15
+action ALIZRUNNING     0   4  5  1  11
+action ALIZTHINK     20  2  5  1  40
+action ALIZSCREAM    30  1  5  1  2
+action ALIZJUMP      45  3  5  1  20
+action ALIZFALL      55  1  5
+action ALIZSHOOTING    70  2  5  1  7
+action ALIZDYING     60  6  1  1  15
+action ALIZLYINGDEAD   65  1
+action ALIZFROZEN     0  1  5
+
+move LIZWALKVEL 72
+move LIZRUNVEL 192
+move LIZJUMPVEL 184
+move LIZSTOP
+
+ai AILIZGETENEMY ALIZWALKING LIZWALKVEL seekplayer
+ai AILIZDODGE ALIZRUNNING LIZRUNVEL dodgebullet
+ai AILIZCHARGEENEMY ALIZRUNNING LIZRUNVEL seekplayer
+ai AILIZFLEENEMY ALIZWALKING LIZWALKVEL fleeenemy
+ai AILIZSHOOTENEMY ALIZSHOOTING LIZSTOP faceplayer
+ai AILIZJUMPENEMY ALIZJUMP LIZJUMPVEL jumptoplayer
+ai AILIZTHINK ALIZTHINK LIZSTOP faceplayerslow
+ai AILIZSHRUNK ALIZWALKING SHRUNKVELS fleeenemy
+ai AILIZGROW ALIZSTAND  LIZSTOP faceplayerslow
+ai AILIZSPIT ALIZSCREAM LIZSTOP faceplayerslow
+ai AILIZDYING ALIZDYING LIZSTOP faceplayer
+
+state lizseekstate
+
+  ifactornotstayput
+  {
+    ifcansee
+      ifp palive
+        ifpdistl 2048
+          ifcount 16
+            ifcanshoottarget
+    {
+      ai AILIZSHOOTENEMY
+      break
+    }
+    ifai AILIZCHARGEENEMY
+    {
+      ifcount 72
+        ifcanshoottarget
+      {
+        ai AILIZSHOOTENEMY
+        break
+      }
+      ifp phigher
+        ifpdistg 2048
+          ifrnd 6
+      {
+        ai AILIZJUMPENEMY
+        break
+      }
+    }
+    else
+      ifpdistg 4096
+    {
+      ifrnd 92
+      {
+        ifcount 48
+          ifcanshoottarget
+            ai AILIZSHOOTENEMY
+      }
+      else
+        ifcount 24
+      {
+        ai AILIZCHARGEENEMY
+        break
+      }
+    }
+
+    iffloordistl 16
+    {
+      ifcount 48
+        ifnotmoving
+          ifcansee
+      {
+        ai AILIZJUMPENEMY
+        break
+      }
+    }
+    else
+    {
+      ifpdistg 1280
+        ai AILIZJUMPENEMY
+      break
+    }
+
+    ifrnd 4
+      ifnotmoving
+        operate
+    else
+      ifrnd 1
+        ifbulletnear
+    {
+      ifgapzl 128
+        ai AILIZDODGE
+      else
+        ifactornotstayput
+      {
+        ifrnd 32
+          ai AILIZJUMPENEMY
+        else
+          ai AILIZDODGE
+      }
+    }
+  }
+  else
+  {
+    ifactioncount 16
+    {
+      ifp palive
+        ifrnd 32
+          ifcansee
+            ifcanshoottarget
+              ai AILIZSHOOTENEMY
+    }
+    ifcount 16
+      ifrnd 32
+        move LIZWALKVEL randomangle geth
+  }
+
+ends
+
+state lizshrunkstate
+  ifcount SHRUNKDONECOUNT
+    ai AILIZGETENEMY
+  else
+    ifcount SHRUNKCOUNT
+      sizeto 48 40
+  else
+    state genericshrunkcode
+ends
+
+state lizfleestate
+  ifcount 16
+  {
+    ifrnd 48
+      ifp palive
+        ifcansee
+          ai AILIZSPIT
+  }
+  else
+  {
+    iffloordistl 16 nullop
+    else
+      ai AILIZGETENEMY
+    break
+  }
+ends
+
+state lizthinkstate
+  ifrnd 8
+    soundonce CAPT_ROAM
+  ifactioncount 3
+  {
+    ifrnd 32
+      ifp palive
+        ifcansee
+          ai AILIZSPIT
+        else
+          ifrnd 96
+            ai AILIZGETENEMY
+  }
+  else
+    ifactioncount 2
+      ifrnd 1
+        spawn FECES
+  ifrnd 1
+    ifbulletnear
+  {
+    ifgapzl 96
+      ai AILIZDODGE
+    else
+    {
+      ifrnd 128
+        ai AILIZJUMPENEMY
+      else
+        ai AILIZDODGE
+    }
+  }
+ends
+
+state lizshootstate
+  ifcount 20
+    ifrnd 8
+  {
+    ifcansee
+      ifpdistl 2048
+    {
+      ifrnd 128
+        ai AILIZFLEENEMY
+      break
+    }
+    ifrnd 80
+      ai AILIZTHINK
+    else
+      ai AILIZGETENEMY
+  }
+  ifactioncount 2
+  {
+    ifcansee
+    {
+      ifcanshoottarget
+      {
+        sound CAPT_ATTACK
+        shoot SHOTSPARK1
+        resetactioncount
+      }
+      else
+        ai AILIZTHINK
+    }
+    else
+      ai AILIZGETENEMY
+  }
+ends
+
+state checklizhit
+  spawn BLOOD
+  ifai AILIZSHRUNK
+  {
+    addkills 1
+    sound SQUISHED
+    state standard_jibs
+    killit
+  }
+  ifdead
+  {
+    ifwasweapon FREEZEBLAST
+    {
+      sound SOMETHINGFROZE
+      spritepal 1
+      move 0
+      action ALIZFROZEN
+      strength 0
+      break
+    }
+
+    state drop_chaingun
+
+    ifwasweapon GROWSPARK
+    {
+      cstat 0
+      sound ACTOR_GROWING
+      ai AILIZGROW
+      break
+    }
+
+    addkills 1
+
+    ifwasweapon RPG
+    {
+      sound SQUISHED
+      state liz_body_jibs
+      state standard_jibs
+      killit
+    }
+    else
+      ifwasweapon RADIUSEXPLOSION
+    {
+      sound SQUISHED
+      state liz_body_jibs
+      state standard_jibs
+      killit
+    }
+    else
+    {
+      state rf
+      ai AILIZDYING
+      ifrnd 64
+        spawn BLOODPOOL
+    }
+    sound CAPT_DYING
+  }
+  else
+  {
+    sound CAPT_PAIN
+    ifwasweapon SHRINKSPARK
+    {
+      sound ACTOR_SHRINKING
+      ai AILIZSHRUNK
+      break
+    }
+    ifwasweapon GROWSPARK
+      sound EXPANDERHIT
+
+    state random_wall_jibs
+    ifp palive
+      ifcansee
+        ifcanshoottarget
+    {
+      ai AILIZSHOOTENEMY
+      break
+    }
+  }
+ends
+
+state lizjumpstate
+  ifaction ALIZFALL
+  {
+    iffloordistl 16
+      ai AILIZGETENEMY
+  }
+  else
+    ifactioncount 3
+      action ALIZFALL
+ends
+
+state lizdyingstate
+  ifaction ALIZLYINGDEAD
+  {
+    strength 0
+    ifhitweapon
+      ifwasweapon RADIUSEXPLOSION
+    {
+      sound SQUISHED
+      state standard_jibs
+      killit
+    }
+    ifcount RESPAWNACTORTIME
+      ifrespawn
+    {
+      spawn TRANSPORTERSTAR
+      cstat 257
+      strength LIZSTRENGTH
+      ai AILIZGETENEMY
+    }
+  }
+  else
+    ifai AILIZDYING
+      ifactioncount 6
+  {
+    iffloordistl 8
+      sound THUD
+    move LIZSTOP
+    action ALIZLYINGDEAD
+  }
+ends
+
+state lizdodgestate
+  ifcount 13
+    ai AILIZGETENEMY
+ends
+
+actor LIZMANSTAYPUT LIZSTRENGTH ai AILIZGETENEMY cactor LIZMAN enda
+actor LIZMANSPITTING LIZSTRENGTH ai AILIZSPIT cactor LIZMAN enda
+actor LIZMANJUMP LIZSTRENGTH ai AILIZJUMPENEMY cactor LIZMAN enda
+
+state lizcode
+  state checksquished
+  ifai 0
+    ai AILIZGETENEMY
+  else
+    ifaction ALIZLYINGDEAD
+  {
+    fall
+    state lizdyingstate
+    break
+  }
+  else
+    ifaction ALIZFROZEN
+  {
+    ifcount THAWTIME
+    {
+      ai AILIZGETENEMY
+      getlastpal
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      addkills 1
+
+      ifrnd 84
+        spawn BLOODPOOL
+      lotsofglass 30
+      sound GLASS_BREAKING
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  else
+    ifai AILIZJUMPENEMY
+      state lizjumpstate
+  else
+  {
+    fall
+    ifai AILIZGETENEMY
+      state lizseekstate
+    else
+      ifai AILIZCHARGEENEMY
+        state lizseekstate
+    else
+      ifai AILIZDODGE
+        state lizdodgestate
+    else
+      ifai AILIZSHOOTENEMY
+        state lizshootstate
+    else
+      ifai AILIZFLEENEMY
+        state lizfleestate
+    else
+      ifai AILIZTHINK
+        state lizthinkstate
+    else
+      ifai AILIZSHRUNK
+        state lizshrunkstate
+    else
+      ifai AILIZGROW
+        state genericgrowcode
+    else
+      ifai AILIZDYING
+        state lizdyingstate
+    else
+      ifai AILIZSPIT
+    {
+      ifcount 26
+        ai AILIZGETENEMY
+      else
+        ifcount 18
+          ifrnd 96
+      {
+        shoot SPIT
+        sound LIZARD_SPIT
+      }
+    }
+  }
+
+  ifai AILIZSHRUNK
+    break
+  ifhitweapon
+    state checklizhit
+ends
+
+actor LIZMAN LIZSTRENGTH
+  fall
+  state lizcode
+enda
+
+
+
+
+
+
+action DRONEFRAMES   0   1   7   1   1
+action DRONESCREAM   0   1   7   1   1
+move DRONERUNVELS 128 64
+move DRONERUNUPVELS 128 -64
+move DRONEBULLVELS 252 -64
+move DRONEBACKWARDS -64 -64
+move DRONERISE 32 -32
+move DRONESTOPPED -16
+
+ai AIDRONEGETE DRONESCREAM DRONERUNVELS faceplayerslow getv
+ai AIDRONEWAIT DRONEFRAMES DRONESTOPPED faceplayerslow
+ai AIDRONEGETUP DRONESCREAM DRONERUNUPVELS faceplayer getv
+ai AIDRONEPULLBACK DRONEFRAMES DRONEBACKWARDS faceplayerslow
+ai AIDRONEHIT DRONESCREAM DRONEBACKWARDS faceplayer
+ai AIDRONESHRUNK DRONEFRAMES SHRUNKVELS fleeenemy
+ai AIDRONEDODGE DRONEFRAMES DRONEBULLVELS dodgebullet geth
+ai AIDRONEDODGEUP DRONEFRAMES DRONERISE getv geth
+
+state dronedead
+  addkills 1
+  debris SCRAP1 8
+  debris SCRAP2 4
+  debris SCRAP3 7
+  spawn EXPLOSION2
+  sound RPG_EXPLODE
+  hitradius 2048 15 20 25 30
+  killit
+ends
+
+state checkdronehitstate
+
+  ifdead state dronedead
+  else ifsquished state dronedead
+  else
+  {
+    sound DRON_PAIN
+    ifbulletnear
+    {
+      ifceilingdistl 64
+        ifrnd 48
+          ai AIDRONEDODGE
+      ai AIDRONEDODGEUP
+    }
+    else
+      ai AIDRONEGETE
+  }
+ends
+
+state droneshrunkstate
+  ifcount 24
+    killit
+  else
+    sizeto 1 1
+ends
+
+state checkdronenearplayer
+
+  ifp palive
+    ifpdistl 1596
+  {
+    ifcount 8
+    {
+      addkills 1
+      sound DRON_ATTACK2
+      debris SCRAP1 8
+      debris SCRAP2 4
+      debris SCRAP3 7
+      spawn EXPLOSION2
+      sound RPG_EXPLODE
+      hitradius 2048 15 20 25 30
+      killit
+    }
+    else
+      ifcount 3 nullop
+      else
+        sound LASERTRIP_ARMING
+  }
+
+ends
+
+state dronegetstate
+  ifrnd 192
+  {
+    ifcansee
+    {
+      ifbulletnear
+      {
+        ai AIDRONEDODGE
+        break
+      }
+      ifmove DRONEBULLVELS
+      {
+        ifcount 64
+          ai AIDRONEPULLBACK
+        else
+          ifnotmoving
+            ifcount 16
+              ai AIDRONEPULLBACK
+      }
+      else
+        ifcount 32
+      {
+        ifp phigher
+          move DRONEBULLVELS geth getv
+        else
+          move DRONEBULLVELS geth
+      }
+    }
+    else
+      ifrnd 1
+        operate
+  }
+ends
+
+state dronedodgestate
+  ifai AIDRONEDODGEUP
+  {
+     ifcount 8
+       ai AIDRONEGETE
+     else
+       ifnotmoving
+         ai AIDRONEGETE
+  }
+  else
+  {
+    ifcount 8
+      ai AIDRONEGETE
+    else
+      ifnotmoving
+        ai AIDRONEGETE
+  }
+ends
+
+actor DRONE DRONESTRENGTH
+  state checkdronenearplayer
+
+  ifrnd 2
+    fall
+  else
+    soundonce DRON_JETSND
+
+  ifaction 0
+    ai AIDRONEGETE
+
+  else
+    ifai AIDRONEWAIT
+  {
+    ifactioncount 4
+      ifrnd 16
+        ifcansee
+    {
+      sound DRON_ATTACK1
+      ifp phigher
+        ai AIDRONEGETUP
+      else ai AIDRONEGETE
+    }
+  }
+  else
+    ifai AIDRONEGETE
+      state dronegetstate
+  else
+    ifai AIDRONEGETUP
+      state dronegetstate
+  else
+    ifai AIDRONEPULLBACK
+  {
+    ifcount 32
+    ai AIDRONEWAIT
+  }
+  else
+    ifai AIDRONEHIT
+  {
+    ifcount 8
+      ai AIDRONEWAIT
+  }
+  else
+    ifai AIDRONESHRUNK
+      state droneshrunkstate
+  else
+    ifai AIDRONEDODGE
+      state dronedodgestate
+  else
+    ifai AIDRONEDODGEUP
+      state dronedodgestate
+
+  ifhitweapon
+    state checkdronehitstate
+
+  ifrnd 1
+    soundonce DRON_ROAM
+
+enda
+
+
+
+action AOCTAWALK    0   3   5   1   15
+action AOCTASTAND     0   1   5   1   15
+action AOCTASCRATCH   0   4   5   1   15
+action AOCTAHIT    30   1   1   1   10
+action AOCTASHOOT    20   1   5   1   10
+action AOCTADYING    30   8   1   1   17
+action AOCTADEAD     38   1   1   1  1
+action AOCTAFROZEN    0   1   5
+
+move OCTAWALKVELS 96 -30
+move OCTAUPVELS 96 -70
+move OCTASTOPPED 0 -30
+move OCTAINWATER 96 24
+
+ai AIOCTAGETENEMY AOCTAWALK OCTAWALKVELS seekplayer
+ai AIOCTASHOOTENEMY AOCTASHOOT OCTASTOPPED faceplayer
+ai AIOCTASCRATCHENEMY AOCTASCRATCH OCTASTOPPED faceplayerslow
+ai AIOCTAHIT AOCTAHIT OCTASTOPPED faceplayer
+ai AIOCTASHRUNK AOCTAWALK SHRUNKVELS faceplayer
+ai AIOCTAGROW AOCTASTAND OCTASTOPPED faceplayerslow
+ai AIOCTADYING AOCTADYING OCTASTOPPED faceplayer
+
+state octagetenemystate
+
+  ifcansee
+  {
+    ifactioncount 32
+    {
+      ifrnd 48
+        ifcanshoottarget
+      {
+        sound OCTA_ATTACK1
+        ai AIOCTASHOOTENEMY
+        break
+      }
+    }
+    else
+      ifpdistl 1280
+        ai AIOCTASCRATCHENEMY
+  }
+
+ends
+
+state octascratchenemystate
+  ifpdistg 1280
+    ai AIOCTAGETENEMY
+  else
+    ifcount 32
+  {
+    resetcount
+    sound OCTA_ATTACK2
+    palfrom 8 32
+    addphealth OCTASCRATCHINGPLAYER
+  }
+ends
+
+state octashootenemystate
+  ifcount 25
+  {
+    ifcount 27
+      ai AIOCTAGETENEMY
+  }
+  else
+    ifcount 24
+      shoot COOLEXPLOSION1
+  else
+    ifactioncount 6
+      resetactioncount
+ends
+
+state checkoctahitstate
+  ifwasweapon SHRINKSPARK
+  {
+    sound ACTOR_SHRINKING
+    ai AIOCTASHRUNK
+  }
+  else
+  {
+    ifdead
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        sound SOMETHINGFROZE
+        spritepal 1
+        move 0
+        action AOCTAFROZEN
+        strength 0
+        break
+      }
+
+      addkills 1
+      ifwasweapon RPG
+      {
+        sound SQUISHED
+        state standard_jibs
+        killit
+      }
+      else
+        ifwasweapon RADIUSEXPLOSION
+      {
+        sound SQUISHED
+        state standard_jibs
+        killit
+      }
+      else
+        ifwasweapon GROWSPARK
+      {
+        cstat 0
+        sound ACTOR_GROWING
+        ai AIOCTAGROW
+        break
+      }
+      else
+      {
+        state rf
+        ai AIOCTADYING
+      }
+      sound OCTA_DYING
+    }
+    else
+    {
+      ifwasweapon RPG
+      {
+        sound OCTA_DYING
+        addkills 1
+        state standard_jibs
+        killit
+      }
+      else
+        ifwasweapon GROWSPARK
+          sound EXPANDERHIT
+
+      sound OCTA_PAIN
+      spawn BLOOD
+      ifrnd 64
+        ai AIOCTAHIT
+    }
+  }
+  state random_wall_jibs
+ends
+
+state octashrunkstate
+  ifcount SHRUNKDONECOUNT
+    ai AILIZGETENEMY
+  else
+    ifcount SHRUNKCOUNT
+      sizeto 40 40
+  else
+    state genericshrunkcode
+ends
+
+
+state octadyingstate
+  ifactioncount 8
+  {
+    ifrnd 64
+      spawn BLOODPOOL
+    move OCTASTOPPED
+    action AOCTADEAD
+    break
+  }
+  else
+    ifactioncount 5 nullop
+  else
+    ifactioncount 4
+      iffloordistl 8
+        sound THUD
+ends
+
+actor OCTABRAINSTAYPUT OCTASTRENGTH
+  ai AIOCTAGETENEMY
+  cactor OCTABRAIN
+enda
+
+actor OCTABRAIN OCTASTRENGTH
+  fall
+  state checksquished
+  ifai 0
+    ai AIOCTAGETENEMY
+  else
+    ifaction AOCTADEAD
+  {
+    strength 0
+    ifcount RESPAWNACTORTIME
+      ifrespawn
+    {
+      addkills -1
+      spawn TRANSPORTERSTAR
+      cstat 257
+      strength OCTASTRENGTH
+      ai AIOCTAGETENEMY
+    }
+    ifhitweapon
+      ifwasweapon RADIUSEXPLOSION
+    {
+      state standard_jibs
+      killit
+    }
+    break
+  }
+  else ifaction AOCTAFROZEN
+  {
+    ifcount THAWTIME
+    {
+      ai AIOCTAGETENEMY
+      getlastpal
+    }
+    else
+      ifcount FROZENDRIPTIME
+      {
+        ifactioncount 26
+        {
+          spawn WATERDRIP
+          resetactioncount
+        }
+      }
+
+    ifhitweapon
+    {
+      addkills 1
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+
+      lotsofglass 30
+      ifrnd 84
+        spawn BLOODPOOL
+      sound GLASS_BREAKING
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  else
+  {
+    ifrnd 1
+      soundonce OCTA_ROAM
+
+    ifai AIOCTAGETENEMY
+      state octagetenemystate
+    else
+      ifai AIOCTAHIT
+      {
+        ifcount 8
+          ai AIOCTASHOOTENEMY
+      }
+    else
+      ifai AIOCTADYING
+      {
+        state octadyingstate
+        break
+      }
+    else
+      ifai AIOCTASCRATCHENEMY
+        state octascratchenemystate
+    else
+      ifai AIOCTASHOOTENEMY
+        state octashootenemystate
+    else
+      ifai AIOCTASHRUNK
+      {
+        state octashrunkstate
+        break
+      }
+    else
+      ifai AIOCTAGROW
+        state genericgrowcode
+
+    ifmove OCTAUPVELS nullop
+    else
+      ifp phigher
+        move OCTAUPVELS seekplayer
+    else
+      ifmove OCTAINWATER nullop
+      else
+        ifinwater
+          move OCTAINWATER seekplayer
+
+    ifhitweapon
+      state checkoctahitstate
+  }
+enda
+
+action APIGWALK     0  4 5 1 20
+action APIGRUN      0  4 5 1 11
+action APIGSHOOT    30 2 5 1 58
+action APIGCOCK     25 1 5 1 16
+action APIGSTAND    30 1 5 1 1
+action APIGDIVE     40 2 5 1 40
+action APIGDIVESHOOT  45 2 5 1 58
+action APIGDYING    55 5 1 1 15
+action APIGHIT      55 1 1 1 10
+action APIGDEAD     60 1 1 1 1
+action APIGFROZEN    0 1 5
+action APIGGROW      0
+
+
+move PIGWALKVELS 72
+move PIGRUNVELS 108
+move PIGSTOPPED
+
+ai AIPIGSEEKENEMY APIGWALK PIGWALKVELS seekplayer
+ai AIPIGSHOOTENEMY APIGSHOOT PIGSTOPPED faceplayer
+ai AIPIGFLEEENEMY APIGWALK PIGWALKVELS fleeenemy
+ai AIPIGSHOOT APIGSHOOT PIGSTOPPED faceplayer
+ai AIPIGDODGE APIGRUN PIGRUNVELS dodgebullet
+ai AIPIGCHARGE APIGRUN PIGRUNVELS seekplayer
+ai AIPIGDIVING APIGDIVE PIGSTOPPED faceplayer
+ai AIPIGDYING APIGDYING PIGSTOPPED faceplayer
+ai AIPIGSHRINK APIGWALK SHRUNKVELS fleeenemy
+ai AIPIGGROW APIGGROW PIGSTOPPED faceplayerslow
+ai AIPIGHIT APIGHIT PIGSTOPPED faceplayer
+
+state pigseekenemystate
+
+  ifai AIPIGCHARGE
+  {
+    ifcansee
+      ifpdistl 3084
+    {
+      ifnotmoving
+        ai AIPIGSEEKENEMY
+      else
+        ai AIPIGDIVING
+    }
+    break
+  }
+  else iffloordistl 32
+  {
+    ifpdistg 4096
+    {
+      ifactornotstayput
+      ai AIPIGCHARGE
+    }
+    ifrnd 8
+    {
+      ifbulletnear
+        ai AIPIGDODGE
+    }
+  }
+
+  ifrnd 128
+    ifcansee
+  {
+    ifai AIPIGDODGE
+    {
+      ifcount 32
+        ai AIPIGCHARGE
+          break
+    }
+    iffloordistl 32
+    {
+      ifpdistl 1024
+        ifp palive
+          ifcanshoottarget
+      {
+        ai AIPIGSHOOTENEMY
+        break
+      }
+      ifcount 48
+      {
+        ifrnd 8
+          ifp palive
+            ifcanshoottarget
+        {
+          ifrnd 192
+            ai AIPIGSHOOTENEMY
+          else
+            ai AIPIGDIVING
+          break
+        }
+      }
+    }
+  }
+ends
+
+
+state pigshootenemystate
+//  ifcansee
+  {
+    ifcount 12 nullop
+    else
+      ifcount 11
+    {
+      ifcanshoottarget
+      {
+        sound PIG_ATTACK
+        shoot SHOTGUN
+        shoot SHOTGUN
+        shoot SHOTGUN
+        shoot SHOTGUN
+        shoot SHOTGUN
+      }
+      else
+        ai AIPIGSEEKENEMY
+    }
+    ifcount 25 nullop
+    else
+      ifcount 24
+      {
+        action APIGCOCK
+        sound SHOTGUN_COCK
+      }
+    ifcount 48 nullop
+    else
+      ifcount 47
+    {
+      ifcanshoottarget
+      {
+        sound PIG_ATTACK
+        shoot SHOTGUN
+        shoot SHOTGUN
+        shoot SHOTGUN
+        shoot SHOTGUN
+        shoot SHOTGUN
+      }
+      else
+        ai AIPIGSEEKENEMY
+    }
+    ifcount 60 nullop
+    else
+      ifcount 59
+      {
+        action APIGCOCK
+        sound SHOTGUN_COCK
+      }
+    ifcount 72
+    {
+      ifrnd 64
+        resetcount
+      else
+      {
+        ifpdistl 768
+          ai AIPIGFLEEENEMY
+        else
+          ai AIPIGSEEKENEMY
+      }
+    }
+    ifaction APIGCOCK
+      ifactioncount 2
+        action APIGSHOOT
+  }
+  else
+    ai AIPIGSEEKENEMY
+ends
+
+state pigfleeenemystate
+  ifactioncount 8
+    ai AIPIGSEEKENEMY
+  else
+    ifnotmoving
+      ai AIPIGSEEKENEMY
+ends
+
+state pigdivestate
+  ifaction APIGDIVESHOOT
+  {
+    ifcansee
+    {
+      ifcount 12 nullop
+      else
+        ifcount 11
+      {
+        ifcanshoottarget
+        {
+          sound PIG_ATTACK
+          shoot SHOTGUN
+          shoot SHOTGUN
+          shoot SHOTGUN
+          shoot SHOTGUN
+        }
+        else
+          ai AIPIGSEEKENEMY
+      }
+      ifcount 25 nullop
+      else
+        ifcount 24
+          sound SHOTGUN_COCK
+      ifcount 48 nullop
+      else
+        ifcount 47
+      {
+        ifcanshoottarget
+        {
+          sound PIG_ATTACK
+          shoot SHOTGUN
+          shoot SHOTGUN
+          shoot SHOTGUN
+          shoot SHOTGUN
+        }
+        else
+          ai AIPIGSEEKENEMY
+      }
+      ifcount 60 nullop
+      else
+        ifcount 59
+      {
+        sound SHOTGUN_COCK
+        ifgapzl 32
+          ai AIPIGDIVING
+        else
+        {
+          ifpdistl 4096
+            ai AIPIGFLEEENEMY
+          else
+            ai AIPIGSEEKENEMY
+        }
+      }
+    }
+    else
+      ifgapzl 32
+        ai AIPIGDIVING
+      else
+        ai AIPIGSEEKENEMY
+  }
+  else
+    ifactioncount 2
+    ifp palive
+    {
+      resetcount
+      action APIGDIVESHOOT
+    }
+ends
+
+state checkpighitstate
+  spawn BLOOD
+  ifdead
+  {
+    state random_wall_jibs
+    ifrnd 16
+      spawn SHIELD
+    else
+      state drop_shotgun
+
+    ifwasweapon GROWSPARK
+    {
+      sound ACTOR_GROWING
+      ai AIPIGGROW
+      break
+    }
+
+    addkills 1
+
+    ifwasweapon FREEZEBLAST
+    {
+      sound SOMETHINGFROZE
+      spritepal 1
+      move 0
+      action APIGFROZEN
+      strength 0
+      break
+    }
+    ifwasweapon RADIUSEXPLOSION
+    {
+      sound SQUISHED
+      state standard_jibs
+      killit
+    }
+    else
+      ifwasweapon RPG
+    {
+      sound SQUISHED
+      state standard_jibs
+      killit
+    }
+    else
+      ai AIPIGDYING
+        sound PIG_DYING
+  }
+  else
+  {
+    sound PIG_PAIN
+    state random_wall_jibs
+
+    ifwasweapon SHRINKSPARK
+    {
+      sound ACTOR_SHRINKING
+      ai AIPIGSHRINK
+    }
+    else
+      ifwasweapon GROWSPARK
+        sound EXPANDERHIT
+    else
+      ifrnd 32
+        ai AIPIGHIT
+    else
+      ifrnd 64
+        ai AIPIGSHOOTENEMY
+    else
+      ifrnd 64
+      {
+        ai AIPIGDIVING
+        action APIGDIVESHOOT
+      }
+  }
+ends
+
+state pigshrinkstate
+  ifcount SHRUNKDONECOUNT
+    ai AIPIGSEEKENEMY
+  else
+    ifcount SHRUNKCOUNT
+      sizeto 48 40
+  else
+    state genericshrunkcode
+ends
+
+state pigdyingstate
+  ifactioncount 5
+  {
+    ifrnd 64
+      spawn BLOODPOOL
+    state rf
+    iffloordistl 8
+      sound THUD
+    action APIGDEAD
+    move PIGSTOPPED
+    break
+  }
+ends
+
+
+actor PIGCOPDIVE PIGCOPSTRENGTH
+  ai AIPIGDIVING
+  action APIGDIVESHOOT
+  cactor PIGCOP
+enda
+actor PIGCOPSTAYPUT PIGCOPSTRENGTH
+  ai AIPIGSEEKENEMY
+  cactor PIGCOP
+enda
+actor PIGCOP PIGCOPSTRENGTH APIGSTAND
+  fall
+  state checksquished
+  ifaction APIGSTAND
+    ai AIPIGSEEKENEMY
+  else
+    ifaction APIGDEAD
+  {
+    ifrespawn
+      ifcount RESPAWNACTORTIME
+    {
+      spawn TRANSPORTERSTAR
+      cstat 257
+      strength PIGCOPSTRENGTH
+      ai AIPIGSEEKENEMY
+    }
+    else
+    {
+      strength 0
+      ifhitweapon
+        ifwasweapon RADIUSEXPLOSION
+      {
+        sound SQUISHED
+        state standard_jibs
+        killit
+      }
+      break
+    }
+  }
+  else
+    ifaction APIGFROZEN
+  {
+    ifcount THAWTIME
+    {
+      ai AIPIGSEEKENEMY
+      getlastpal
+    }
+    else
+      ifcount FROZENDRIPTIME
+        ifrnd 8
+          spawn WATERDRIP
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      addkills 1
+
+      lotsofglass 30
+      ifrnd 84 spawn BLOODPOOL
+      sound GLASS_BREAKING
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  else
+    ifai AIPIGDYING
+      state pigdyingstate
+  else
+    ifai AIPIGHIT
+    {
+      ifactioncount 3
+      ai AIPIGSEEKENEMY
+    }
+  else
+    ifai AIPIGSHRINK
+      state pigshrinkstate
+  else
+  {
+    ifai AIPIGSEEKENEMY
+      state pigseekenemystate
+    else
+      ifai AIPIGDODGE
+        state pigseekenemystate
+    else
+      ifai AIPIGSHOOTENEMY
+        state pigshootenemystate
+    else
+      ifai AIPIGGROW
+        state genericgrowcode
+    else
+      ifai AIPIGFLEEENEMY
+        state pigfleeenemystate
+    else
+      ifai AIPIGDIVING
+        state pigdivestate
+    else
+      ifai AIPIGCHARGE
+        state pigseekenemystate
+    ifhitweapon
+      state checkpighitstate
+    ifrnd 1
+    {
+      ifrnd 32
+        soundonce PIG_ROAM
+      else
+        ifrnd 64
+          soundonce PIG_ROAM2
+      else
+        soundonce PIG_ROAM3
+    }
+  }
+enda
+
+
+
+action ABOSS1WALK        0  4  5  1  12
+action ABOSS1FROZEN        30 1  5
+action ABOSS1RUN         0  6  5  1  5
+action ABOSS1SHOOT         30 2  5  1  4
+action ABOSS1LOB         40 2  5  1  35
+action ABOSS1DYING        50 5  1  1  35
+action BOSS1FLINTCH       50 1  1  1  1
+action ABOSS1DEAD         55
+
+move PALBOSS1SHRUNKRUNVELS 32
+move PALBOSS1RUNVELS 128
+move BOSS1WALKVELS 208
+move BOSS1RUNVELS 296
+move BOSS1STOPPED
+
+ai AIBOSS1SEEKENEMY ABOSS1WALK BOSS1WALKVELS seekplayer
+ai AIBOSS1RUNENEMY ABOSS1RUN BOSS1RUNVELS faceplayer
+ai AIBOSS1SHOOTENEMY ABOSS1SHOOT BOSS1STOPPED faceplayer
+ai AIBOSS1LOBBED ABOSS1LOB BOSS1STOPPED faceplayer // faceplayersmart
+ai AIBOSS1DYING ABOSS1DYING BOSS1STOPPED faceplayer
+ai AIBOSS1PALSHRINK ABOSS1WALK PALBOSS1SHRUNKRUNVELS furthestdir
+
+state boss1palshrunkstate
+  ifcount SHRUNKDONECOUNT
+    ai AITROOPSEEKENEMY
+  else
+    ifcount SHRUNKCOUNT
+      sizeto 40 40
+  else
+    state genericshrunkcode
+ends
+
+state checkboss1seekstate
+  ai AIBOSS1SEEKENEMY
+  ifspritepal 0 nullop
+    else   // a fake way of doing a ifspritepal NOT.
+      move PALBOSS1RUNVELS seekplayer
+ends
+
+state boss1runenemystate
+  ifpdistl 2048
+  {
+    ifp palive
+      ai AIBOSS1SHOOTENEMY
+    break
+  }
+  else
+    ifcansee
+  {
+    ifactioncount 6
+    {
+      ifcanshoottarget
+      {
+        resetactioncount
+        sound BOS1_WALK
+      }
+      else
+        ai AIBOSS1SEEKENEMY
+    }
+  }
+  else
+    ai AIBOSS1SEEKENEMY
+ends
+
+state boss1seekenemystate
+  ifrnd 2
+    soundonce BOS1_ROAM
+  else
+    ifactioncount 6
+  {
+    resetactioncount
+    sound BOS1_WALK
+  }
+
+  ifpdistl 2548
+    ifp palive
+  {
+    ai AIBOSS1SHOOTENEMY
+    break
+  }
+
+  ifcansee
+    ifcount 32
+  {
+    ifrnd 32
+    {
+      ifp palive
+        ifcanshoottarget
+          ai AIBOSS1SHOOTENEMY
+    }
+    else
+      ifpdistg 2548
+        ifrnd 192
+          ifcanshoottarget
+    {
+      ifrnd 64
+      {
+        ai AIBOSS1RUNENEMY
+        ifspritepal 0 nullop
+        else
+          move PALBOSS1RUNVELS seekplayer
+      }
+      else
+        ai AIBOSS1LOBBED
+    }
+  }
+
+ends
+
+state boss1dyingstate
+  ifaction ABOSS1DEAD
+  {
+    ifspritepal 0
+      break
+    ifrespawn
+      ifcount RESPAWNACTORTIME
+    {
+      spawn TRANSPORTERSTAR
+      cstat 257
+      strength PIGCOPSTRENGTH
+      state checkboss1seekstate
+    }
+    else
+    {
+      strength 0
+      ifhitweapon
+        ifwasweapon RADIUSEXPLOSION
+      {
+        sound SQUISHED
+        state standard_jibs
+        killit
+      }
+      break
+    }
+  }
+  ifactioncount 5
+  {
+    iffloordistl 8
+      sound THUD
+    action ABOSS1DEAD
+    cstat 0
+    ifspritepal 0
+    endofgame 52
+  }
+ends
+
+state boss1lobbedstate
+  ifcansee
+  {
+    ifactioncount 2
+    {
+      resetactioncount
+      sound BOS1_ATTACK2
+      shoot MORTER
+    }
+    else
+      ifcount 64
+        ifrnd 16
+          state checkboss1seekstate
+  }
+  else
+    state checkboss1seekstate
+ends
+
+state boss1shootenemy
+  ifcount 72
+    state checkboss1seekstate
+  else
+    ifaction ABOSS1SHOOT
+      ifactioncount 2
+  {
+    sound BOS1_ATTACK1
+    shoot SHOTSPARK1
+    shoot SHOTSPARK1
+    shoot SHOTSPARK1
+    shoot SHOTSPARK1
+    shoot SHOTSPARK1
+    shoot SHOTSPARK1
+    resetactioncount
+  }
+ends
+
+state checkboss1hitstate
+  ifrnd 2
+    spawn BLOODPOOL
+  ifdead
+  {
+    ifspritepal 0
+      globalsound DUKE_TALKTOBOSSFALL
+    else
+    {
+      ifrnd 64
+        globalsound DUKE_TALKTOBOSSFALL
+      ifwasweapon FREEZEBLAST
+      {
+        sound SOMETHINGFROZE
+        spritepal 1
+        move 0
+        action ABOSS1FROZEN
+        strength 0
+        break
+      }
+    }
+
+    sound BOS1_DYING
+
+    addkills 1
+    ai AIBOSS1DYING
+  }
+  else
+  {
+    ifrnd 32
+    {
+      action BOSS1FLINTCH
+      move 0
+    }
+
+    ifspritepal 0 nullop
+    else
+      ifwasweapon SHRINKSPARK
+    {
+      sound ACTOR_SHRINKING
+      ai AIBOSS1PALSHRINK
+      cstat 0
+      break
+    }
+
+    soundonce BOS1_PAIN
+
+    debris SCRAP1 1
+    guts JIBS6 1
+  }
+ends
+
+state boss1code
+
+  ifaction ABOSS1FROZEN
+  {
+    ifcount THAWTIME
+    {
+      ai AIBOSS1SEEKENEMY
+      spritepal 21
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      addkills 1
+      lotsofglass 30
+
+      ifrnd 84
+        spawn BLOODPOOL
+      sound GLASS_BREAKING
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  ifai 0
+  {
+    ifspritepal 0
+      ai AIBOSS1RUNENEMY
+    else
+    {
+      strength BOSS1PALSTRENGTH
+      ai AIBOSS1SHOOTENEMY
+    }
+  }
+  else
+    ifaction BOSS1FLINTCH
+  {
+    ifactioncount 3
+    ai AIBOSS1SHOOTENEMY
+  }
+  else
+    ifai AIBOSS1SEEKENEMY
+      state boss1seekenemystate
+  else
+    ifai AIBOSS1RUNENEMY
+      state boss1runenemystate
+  else
+    ifai AIBOSS1SHOOTENEMY
+      state boss1shootenemy
+  else
+    ifai AIBOSS1LOBBED
+      state boss1lobbedstate
+  else
+    ifai AIBOSS1PALSHRINK
+      state boss1palshrunkstate
+
+  ifai AIBOSS1DYING
+    state boss1dyingstate
+  else
+  {
+    ifhitweapon
+      state checkboss1hitstate
+    else
+      ifp palive
+        ifspritepal 0
+          ifpdistl 1280
+    {
+      addphealth -1000
+      palfrom 63 63
+    }
+  }
+ends
+
+actor BOSS1STAYPUT BOSS1STRENGTH cactor BOSS1 enda
+actor BOSS1 BOSS1STRENGTH fall state boss1code enda
+
+
+action ABOSS2WALK        0  4  5  1  30
+action ABOSS2FROZEN        0  1  5
+action ABOSS2RUN         0  4  5  1  15
+action ABOSS2SHOOT         20 2  5  1  15
+action ABOSS2LOB         30 2  5  1  105
+action ABOSS2DYING        40 8  1  1  35
+action BOSS2FLINTCH       40 1  1  1  1
+action ABOSS2DEAD         48
+
+move PALBOSS2SHRUNKRUNVELS 32
+move PALBOSS2RUNVELS 84
+move BOSS2WALKVELS 192
+move BOSS2RUNVELS 256
+move BOSS2STOPPED
+
+ai AIBOSS2SEEKENEMY ABOSS2WALK BOSS2WALKVELS seekplayer
+ai AIBOSS2RUNENEMY ABOSS2RUN BOSS2RUNVELS faceplayer
+ai AIBOSS2SHOOTENEMY ABOSS2SHOOT BOSS2STOPPED faceplayer
+ai AIBOSS2LOBBED ABOSS2LOB BOSS2STOPPED faceplayer
+ai AIBOSS2DYING ABOSS2DYING BOSS2STOPPED faceplayer
+ai AIBOSS2PALSHRINK ABOSS2WALK PALBOSS2SHRUNKRUNVELS furthestdir
+
+state boss2palshrunkstate
+  ifcount SHRUNKDONECOUNT
+  {
+    cstat 257
+    ai AITROOPSEEKENEMY
+  }
+  else
+    ifcount SHRUNKCOUNT
+      sizeto 40 40
+  else
+    state genericshrunkcode
+ends
+
+state checkboss2seekstate
+  ai AIBOSS2SEEKENEMY
+  ifspritepal 0 nullop
+  else   // a fake way of doing a ifspritepal NOT.
+    move PALBOSS2RUNVELS seekplayer
+ends
+
+state boss2runenemystate
+  ifcansee
+  {
+    ifactioncount 3
+    {
+      ifcanshoottarget
+      {
+        resetactioncount
+        sound BOS1_WALK
+      }
+      else
+        ai AIBOSS2SEEKENEMY
+    }
+    ifcount 48
+      ifrnd 2
+    {
+      ifp palive
+      {
+        sound BOS2_ATTACK
+        ai AIBOSS2SHOOTENEMY
+      }
+      break
+    }
+  }
+  else
+    ai AIBOSS2SEEKENEMY
+ends
+
+state boss2seekenemystate
+  ifrnd 2
+    soundonce BOS2_ROAM
+  else
+    ifactioncount 3
+  {
+    resetactioncount
+    sound BOS1_WALK
+  }
+
+  ifcansee
+    ifcount 32
+      ifp palive
+        ifrnd 48
+          ifcanshoottarget
+  {
+    ifrnd 64
+      ifpdistg 4096
+    {
+      ai AIBOSS2RUNENEMY
+      ifspritepal 0 nullop
+      else
+        move PALBOSS2RUNVELS seekplayer
+      break
+    }
+
+    ifpdistl 10240
+    {
+      ifrnd 128
+      {
+        sound BOS2_ATTACK
+        ai AIBOSS2LOBBED
+      }
+    }
+    else
+    {
+      sound BOS2_ATTACK
+      ai AIBOSS2SHOOTENEMY
+    }
+  }
+ends
+
+state boss2dyingstate
+  ifaction ABOSS2DEAD
+  {
+    ifspritepal 0
+      break
+    ifrespawn
+      ifcount RESPAWNACTORTIME
+    {
+      spawn TRANSPORTERSTAR
+      cstat 257
+      strength PIGCOPSTRENGTH
+      state checkboss2seekstate
+    }
+    else
+    {
+      strength 0
+      ifhitweapon
+        ifwasweapon RADIUSEXPLOSION
+      {
+        sound SQUISHED
+        state standard_jibs
+        killit
+      }
+      break
+    }
+  }
+  ifactioncount 8
+  {
+    iffloordistl 8
+      sound THUD
+    action ABOSS2DEAD
+    cstat 0
+    ifspritepal 0
+      endofgame 52
+  }
+ends
+
+state boss2lobbedstate
+  ifcansee
+  {
+    ifactioncount 2
+      resetactioncount
+    else
+      ifactioncount 1
+    {
+      ifrnd 128
+        shoot COOLEXPLOSION1
+    }
+    else
+      ifcount 64
+        ifrnd 16
+          state checkboss2seekstate
+  }
+  else
+    state checkboss2seekstate
+ends
+
+state boss2shootenemy
+  ifcount 72
+    state checkboss2seekstate
+  else
+    ifaction ABOSS2SHOOT
+      ifactioncount 2
+  {
+    shoot RPG
+    resetactioncount
+  }
+ends
+
+state checkboss2hitstate
+  ifrnd 2
+    spawn BLOODPOOL
+  ifdead
+  {
+    ifspritepal 0
+      globalsound DUKE_TALKTOBOSSFALL
+    else
+    {
+      ifrnd 64
+        globalsound DUKE_TALKTOBOSSFALL
+      ifwasweapon FREEZEBLAST
+      {
+        sound SOMETHINGFROZE
+        spritepal 1
+        move 0
+        action ABOSS2FROZEN
+        strength 0
+        break
+      }
+    }
+
+    sound BOS2_DYING
+
+    addkills 1
+
+    ai AIBOSS2DYING
+  }
+  else
+  {
+    ifrnd 144
+    {
+      ifrnd 32
+      {
+        action BOSS2FLINTCH
+        move 0
+      }
+      else
+      {
+        sound BOS2_ATTACK
+        ai AIBOSS2SHOOTENEMY
+      }
+    }
+
+    ifspritepal 0 nullop
+    else
+      ifwasweapon SHRINKSPARK
+    {
+      sound ACTOR_SHRINKING
+      ai AIBOSS2PALSHRINK
+      break
+    }
+
+    soundonce BOS2_PAIN
+
+    debris SCRAP1 1
+    guts JIBS6 1
+  }
+ends
+
+state boss2code
+
+  ifaction ABOSS2FROZEN
+  {
+    ifcount THAWTIME
+    {
+      ai AIBOSS2SEEKENEMY
+        spritepal 21
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      addkills 1
+
+      lotsofglass 30
+      sound GLASS_BREAKING
+      ifrnd 84 spawn BLOODPOOL
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  ifai 0
+  {
+    ifspritepal 0
+      ai AIBOSS2RUNENEMY
+    else
+    {
+      strength 1
+      sound BOS2_ATTACK ai AIBOSS2SHOOTENEMY
+    }
+  }
+  else
+    ifaction BOSS2FLINTCH
+  {
+    ifactioncount 3
+      ai AIBOSS2SEEKENEMY
+  }
+  else
+    ifai AIBOSS2SEEKENEMY
+      state boss2seekenemystate
+  else
+    ifai AIBOSS2RUNENEMY
+      state boss2runenemystate
+  else
+    ifai AIBOSS2SHOOTENEMY
+      state boss2shootenemy
+  else
+    ifai AIBOSS2LOBBED
+      state boss2lobbedstate
+  else
+    ifai AIBOSS2PALSHRINK
+      state boss2palshrunkstate
+
+  ifai AIBOSS2DYING
+    state boss2dyingstate
+  else
+  {
+    ifhitweapon state checkboss2hitstate
+    else
+      ifp palive
+        ifspritepal 0 ifpdistl
+          1280
+    {
+      addphealth -1000
+      palfrom 63 63
+    }
+  }
+
+
+ends
+
+actor BOSS2 BOSS2STRENGTH fall state boss2code enda
+
+action ABOSS3WALK        0  4  5  1  30
+action ABOSS3FROZEN        0  1  5
+action ABOSS3RUN         0  4  5  1  15
+action ABOSS3LOB        20 4  5  1  50
+action ABOSS3LOBBING      30 2  5  1  15
+action ABOSS3DYING        40 8  1  1  20
+action BOSS3FLINTCH       40 1  1  1  1
+action ABOSS3DEAD         48
+
+move PALBOSS3SHRUNKRUNVELS 32
+move PALBOSS3RUNVELS 84
+move BOSS3WALKVELS 208
+move BOSS3RUNVELS 270
+move BOSS3STOPPED
+
+ai AIBOSS3SEEKENEMY ABOSS3WALK BOSS3WALKVELS seekplayer
+ai AIBOSS3RUNENEMY ABOSS3RUN BOSS3RUNVELS faceplayerslow
+ai AIBOSS3LOBENEMY ABOSS3LOB BOSS3STOPPED faceplayer
+ai AIBOSS3DYING ABOSS3DYING BOSS3STOPPED faceplayer
+ai AIBOSS3PALSHRINK ABOSS3WALK PALBOSS3SHRUNKRUNVELS faceplayer
+
+state boss3palshrunkstate
+  ifcount SHRUNKDONECOUNT
+    ai AITROOPSEEKENEMY
+  else
+    ifcount SHRUNKCOUNT
+      sizeto 40 40
+  else
+    state genericshrunkcode
+ends
+
+state checkboss3seekstate
+  ai AIBOSS3SEEKENEMY
+  ifspritepal 0 nullop
+  else   // a fake way of doing a ifspritepal NOT.
+    move PALBOSS3RUNVELS seekplayer
+ends
+
+state boss3runenemystate
+  ifcansee
+  {
+    ifactioncount 3
+    {
+      ifcanshoottarget
+      {
+        resetactioncount
+        sound BOS1_WALK
+      }
+      else
+        ai AIBOSS3SEEKENEMY
+    }
+  }
+  else
+    ai AIBOSS3SEEKENEMY
+ends
+
+state boss3seekenemystate
+  ifrnd 2
+    soundonce BOS3_ROAM
+  else
+    ifactioncount 3
+    {
+      resetactioncount
+      sound BOS1_WALK
+    }
+
+  ifcansee
+    ifcount 32
+      ifrnd 48
+        ifcanshoottarget
+  {
+    ifrnd 64
+      ifpdistg 4096
+      {
+        ai AIBOSS3RUNENEMY
+        ifspritepal 0
+          break
+        move PALBOSS3RUNVELS seekplayer
+        break
+      }
+
+    ifp palive
+      ai AIBOSS3LOBENEMY
+  }
+ends
+
+state boss3dyingstate
+  ifaction ABOSS3DEAD
+  {
+    ifspritepal 0
+      break
+    ifrespawn
+      ifcount RESPAWNACTORTIME
+    {
+      spawn TRANSPORTERSTAR
+      cstat 257
+      strength PIGCOPSTRENGTH
+      state checkboss3seekstate
+    }
+    else
+    {
+      strength 0
+      ifhitweapon
+        ifwasweapon RADIUSEXPLOSION
+      {
+        sound SQUISHED
+        state standard_jibs
+        killit
+      }
+      break
+    }
+  }
+  ifactioncount 8
+  {
+    iffloordistl 8
+      sound THUD
+    action ABOSS3DEAD
+    cstat 0
+    ifspritepal 0
+    endofgame 52
+  }
+ends
+
+state boss3lobbedstate
+  ifcansee
+  {
+    ifaction ABOSS3LOBBING
+      ifactioncount 2
+    {
+      shoot RPG
+      resetactioncount
+      ifrnd 8
+        ai AIBOSS3SEEKENEMY
+    }
+
+    ifactioncount 3
+    {
+      action ABOSS3LOBBING
+      resetcount
+    }
+  }
+  else
+    state checkboss3seekstate
+ends
+
+state checkboss3hitstate
+  ifrnd 2
+    spawn BLOODPOOL
+  ifdead
+  {
+    ifspritepal 0
+      globalsound DUKE_TALKTOBOSSFALL
+    else
+    {
+      ifrnd 64
+        globalsound DUKE_TALKTOBOSSFALL
+      ifwasweapon FREEZEBLAST
+      {
+        sound SOMETHINGFROZE
+        spritepal 1
+        move 0
+        action ABOSS3FROZEN
+        strength 0
+        break
+      }
+    }
+
+    addkills 1
+    ai AIBOSS3DYING
+
+    sound BOS3_DYING
+    sound JIBBED_ACTOR9
+
+  }
+  else
+  {
+    ifrnd 32
+    {
+      action BOSS3FLINTCH
+      move 0
+    }
+
+    ifspritepal 0 nullop
+    else
+      ifwasweapon SHRINKSPARK
+    {
+      sound ACTOR_SHRINKING
+      ai AIBOSS3PALSHRINK
+      break
+    }
+
+    soundonce BOS3_PAIN
+
+    debris SCRAP1 1
+    guts JIBS6 1
+  }
+ends
+
+state boss3code
+
+  ifaction ABOSS3FROZEN
+  {
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+
+      addkills 1
+      lotsofglass 30
+
+      ifrnd 84
+        spawn BLOODPOOL
+      sound GLASS_BREAKING
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  ifai 0
+  {
+    ifspritepal 0
+      ai AIBOSS3RUNENEMY
+    else
+    {
+      strength 1
+      ai AIBOSS3LOBENEMY
+    }
+  }
+  else
+    ifaction BOSS3FLINTCH
+    {
+      ifactioncount 3
+      ai AIBOSS3SEEKENEMY
+    }
+  else
+    ifai AIBOSS3SEEKENEMY
+      state boss3seekenemystate
+  else
+    ifai AIBOSS3RUNENEMY
+      state boss3runenemystate
+  else
+    ifai AIBOSS3LOBENEMY
+      state boss3lobbedstate
+  else
+    ifai AIBOSS3PALSHRINK
+      state boss3palshrunkstate
+
+  ifai AIBOSS3DYING
+    state boss3dyingstate
+  else
+  {
+    ifhitweapon
+      state checkboss3hitstate
+    else
+      ifp palive
+        ifspritepal 0
+          ifpdistl 1280
+      {
+        addphealth -1000
+        palfrom 63 63
+      }
+  }
+ends
+
+actor BOSS3 BOSS3STRENGTH fall state boss3code enda
+
+
+action ACOMMBREETH  0  3  5  1  40
+action ACOMMFROZEN  0  1  5
+action ACOMMSPIN   -5  1  5  1  12
+action ACOMMGET   0  3  5  1  30
+action ACOMMSHOOT  20  1  5   1 35
+action ACOMMABOUTTOSHOOT 20 1 5 1 30
+action ACOMMDYING  30  8  1  1  12
+action ACOMMDEAD   38  1  1  1  1
+
+
+move COMMGETUPVELS 128 -64
+move COMMGETVELS 128 64
+move COMMSLOW 64 24
+move COMMSTOPPED
+
+ai AICOMMWAIT ACOMMBREETH COMMSTOPPED faceplayerslow
+ai AICOMMGET ACOMMGET COMMGETVELS seekplayer
+ai AICOMMSHOOT ACOMMSHOOT COMMSTOPPED faceplayerslow
+ai AICOMMABOUTTOSHOOT ACOMMABOUTTOSHOOT COMMSTOPPED faceplayerslow
+ai AICOMMSPIN ACOMMSPIN COMMGETVELS spin
+ai AICOMMDYING ACOMMDYING COMMSTOPPED faceplayer
+ai AICOMMSHRUNK ACOMMGET COMMSLOW furthestdir
+ai AICOMMGROW ACOMMGET COMMSTOPPED furthestdir
+
+state checkcommhitstate
+
+  ifhitweapon
+  {
+    guts JIBS6 2
+
+    ifdead
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        sound SOMETHINGFROZE
+        spritepal 1
+        move 0
+        action ACOMMFROZEN
+        strength 0
+        break
+      }
+      else
+        ifwasweapon GROWSPARK
+      {
+        sound ACTOR_GROWING
+        ai AICOMMGROW
+        break
+      }
+
+      addkills 1
+
+      ifwasweapon RADIUSEXPLOSION
+      {
+        spawn BLOODPOOL
+        sound SQUISHED
+        state standard_jibs
+        killit
+      }
+      else
+        ifwasweapon RPG
+      {
+        sound SQUISHED
+        spawn BLOODPOOL
+        state standard_jibs
+        killit
+      }
+
+      sound COMM_DYING
+      ai AICOMMDYING
+    }
+    else
+    {
+      soundonce COMM_PAIN
+      ifwasweapon SHRINKSPARK
+      {
+        sound ACTOR_SHRINKING
+        ai AICOMMSHRUNK
+      }
+      else
+        ifwasweapon GROWSPARK
+          sound EXPANDERHIT
+      else
+        ifrnd 24
+          ai AICOMMABOUTTOSHOOT
+    }
+  }
+ends
+
+actor COMMANDERSTAYPUT COMMANDERSTRENGTH
+  cactor COMMANDER
+  ai AICOMMABOUTTOSHOOT
+enda
+
+actor COMMANDER COMMANDERSTRENGTH
+
+  state checksquished
+
+  ifaction ACOMMFROZEN
+  {
+    fall
+
+    ifcount THAWTIME
+    {
+      getlastpal
+      ai AICOMMWAIT
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      addkills 1
+
+      ifrnd 84
+        spawn BLOODPOOL
+      lotsofglass 30
+      sound GLASS_BREAKING
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  ifai 0
+    ai AICOMMSHOOT
+  else
+    ifai AICOMMWAIT
+  {
+    ifcount 20
+    {
+      ifcansee
+      {
+        ifcanshoottarget
+        {
+          ifrnd 96
+            ai AICOMMGET
+          else
+            ai AICOMMABOUTTOSHOOT
+        }
+      }
+      else
+        ai AICOMMGET
+    }
+  }
+  else
+    ifai AICOMMABOUTTOSHOOT
+  {
+    ifactioncount 2
+    {
+      ifcansee
+        ai AICOMMSHOOT
+      else
+      {
+        ai AICOMMGET
+        break
+      }
+    }
+    ifrnd 32 soundonce COMM_ATTACK
+  }
+  else
+    ifai AICOMMSHOOT
+  {
+    ifcanshoottarget
+    {
+      ifcount 24
+        ifrnd 16
+          ai AICOMMWAIT
+      ifactioncount 2
+      {
+        shoot RPG
+        resetactioncount
+      }
+    }
+    else
+      ai AICOMMGET
+  }
+  else
+    ifai AICOMMSHRUNK
+  {
+    ifcount SHRUNKDONECOUNT
+      ai AICOMMGET
+    else
+      ifcount SHRUNKCOUNT
+        sizeto 48 40
+    else
+      state genericshrunkcode
+  }
+  else
+    ifai AICOMMGROW
+      state genericgrowcode
+  else
+    ifai AICOMMGET
+  {
+    ifnotmoving
+      ifrnd 4
+        operate
+    ifpdistl 1024
+      ifp palive
+    {
+      sound COMM_SPIN
+      ai AICOMMSPIN
+      break
+    }
+
+    ifcansee
+    {
+      ifp phigher
+        move COMMGETUPVELS getv geth faceplayer
+      else
+        move COMMGETVELS getv geth faceplayer
+    }
+    ifactioncount 8
+      ifrnd 2
+        ai AICOMMABOUTTOSHOOT
+  }
+  else
+    ifai AICOMMSPIN
+  {
+    soundonce COMM_SPIN
+    ifcount 16
+    {
+      ifpdistl 1280
+      {
+        addphealth CAPTSPINNINGPLAYER
+        sound DUKE_GRUNT
+        palfrom 32
+        16 resetcount
+      }
+      else
+        ifpdistg 2300
+          ai AICOMMWAIT
+    }
+    ifactioncount 52
+      ai AICOMMWAIT
+    ifnotmoving
+      ifrnd 32
+        operate
+  }
+
+  ifai AICOMMDYING
+  {
+    fall
+    strength 0
+
+    ifhitweapon
+      ifwasweapon RADIUSEXPLOSION
+    {
+      sound SQUISHED
+      spawn BLOODPOOL
+      state standard_jibs
+      killit
+    }
+
+    ifaction ACOMMDYING
+      ifactioncount 8
+    {
+      iffloordistl 8
+        sound THUD
+      cstat 0
+      action ACOMMDEAD
+    }
+  }
+  else
+  {
+    ifrnd 2
+      soundonce COMM_ROAM
+    state checkcommhitstate
+  }
+enda
+
+
+// CANNONBALL for Pirates of the Carribean
+define CANNONBALLSTRENGTH 400
+move CANNONBALL1 512 0
+move CANNONBALL2 512 10
+move CANNONBALL3 512 20
+move CANNONBALL4 512 40
+move CANNONBALL5 512 80
+
+useractor notenemy CANNONBALL CANNONBALLSTRENGTH
+
+  ifaction 0
+  {
+    sizeat 32 32
+    cstat 257         // Force actor to block
+    action ANULLACTION
+  }
+
+    ifactioncount 46
+    {
+      ifactioncount 47 nullop
+      else
+        move CANNONBALL5 geth getv
+    }
+    else
+      ifactioncount 44
+    {
+      ifactioncount 45 nullop
+      else
+        move CANNONBALL4 geth getv
+    }
+    else
+      ifactioncount 40
+    {
+      ifactioncount 41 nullop
+      else
+        move CANNONBALL3 geth getv
+    }
+    else
+      ifactioncount 32
+    {
+      ifactioncount 33 nullop
+      else
+        move CANNONBALL2 geth getv
+    }
+    else
+      ifactioncount 16
+    {
+      ifactioncount 17 nullop
+      else move CANNONBALL1 geth getv
+    }
+
+  ifnotmoving
+  {
+    spawn EXPLOSION2
+    sound PIPEBOMB_EXPLODE
+    hitradius 4096 WEAKEST WEAK MEDIUMSTRENGTH TOUGH
+    killit
+  }
+
+  ifhitweapon
+  {
+    ifdead
+    {
+      spawn EXPLOSION2
+      hitradius 4096 WEAKEST WEAK MEDIUMSTRENGTH TOUGH
+      killit
+    }
+    else
+      debris SCRAP1 3
+  }
+
+enda
+
+
+define CANNONBALLS 1818
+define CANNONBALLSSTRENGTH 10
+move CANNONBALLSVEL
+
+useractor notenemy CANNONBALLS CANNONBALLSSTRENGTH
+  ifaction 0
+  {
+    cstator 257
+    action ANULLACTION
+  }
+  ifhitweapon
+  {
+    ifdead
+    {
+      spawn EXPLOSION2
+      hitradius 4096 WEAKEST WEAK MEDIUMSTRENGTH TOUGH
+      killit
+    }
+    else
+      debris SCRAP1 3
+  }
+enda
+
+
+define CANNON 1810
+define CANNONSTRENGTH 400
+action ACANNONWAIT 0 1 7 1 1
+action ACANNONSHOOTING 0 1 7 1 1
+move CANNONSTOP
+
+useractor enemy CANNON CANNONSTRENGTH // fall
+
+  ifaction 0
+  {
+//    sizeat 64 64
+    action ACANNONWAIT
+  }
+  else
+    ifaction ACANNONSHOOTING
+  {
+    spawn CANNONBALL
+    action ACANNONWAIT
+  }
+  else
+    ifaction ACANNONWAIT
+  {
+    ifactioncount 64
+    {
+      ifrnd 128
+        action ACANNONSHOOTING
+      else
+        resetactioncount
+    }
+  }
+
+  ifhitweapon
+  {
+    ifdead
+    {
+      addkills 1
+      hitradius 4096 WEAKEST WEAK MEDIUMSTRENGTH TOUGH
+      spawn EXPLOSION2
+      killit
+    }
+    else debris SCRAP1 3
+  }
+
+  ifpdistl 1024
+    ifhitspace
+  {
+    ifp pfacing
+      ifcanshoottarget
+        spawn CANNONBALL
+      else break
+  }
+enda
+
+useractor notenemy HOTMEAT TOUGH
+  ifaction 0
+  {
+    action ANULLACTION
+    cstat 257
+  }
+  ifhitweapon
+  {
+    ifdead
+    {
+      sound SQUISHED
+      guts JIBS5 8
+      guts JIBS6 9
+      killit
+    }
+    else
+      guts JIBS6 1
+  }
+  ifrnd 1
+    spawn WATERDRIP
+
+enda
+
+action ASPEAKERBROKE 1
+useractor notenemy SPEAKER
+  ifaction 0
+  {
+    ifhitweapon
+    {
+      stopsound STORE_MUSIC
+      soundonce STORE_MUSIC_BROKE
+      action ASPEAKERBROKE
+    }
+    else
+    {
+      ifpdistl 10240
+          soundonce STORE_MUSIC
+      cstat 289
+    }
+  }
+enda
+
+action ALAVABUBBLE
+action ALAVABUBBLEANIM 0 5 1 1 16
+
+useractor notenemy LAVABUBBLE
+  ifaction 0
+  {
+    cstat 32768
+    action ALAVABUBBLE
+  }
+  else
+    ifaction ALAVABUBBLE
+  {
+    ifcount 72
+      ifrnd 2
+    {
+      cstat 0
+      action ALAVABUBBLEANIM
+    }
+  }
+  else
+  {
+    ifactioncount 5
+    {
+      cstat 32768
+      action ALAVABUBBLE
+    }
+  }
+enda
+
+// RIOT TANK with Pigcop inside
+
+define TANKSTRENGTH       500      // 2 3 4 5 7 8
+//           off-set, numofframes, numofrot, skipframes, delay
+action ATANKSPIN   0 1 7 1 4
+action ATANKSHOOTING 7 2 7 1 10
+action ATANKWAIT 0 1 7 1 1
+action ATANKDESTRUCT 0 1 7 1 1
+action ATANKDEAD 0 1 7 1 1
+// move TANKVEL horiz vert
+move TANKFORWARD 100
+move TANKSTOP
+
+useractor enemy TANK TANKSTRENGTH fall
+
+  ifaction 0
+  {
+    sizeat 60 60
+    action ATANKWAIT
+    cstat 257
+    clipdist 100
+  }
+  else
+    ifaction ATANKSPIN
+  {
+    soundonce TANK_ROAM
+
+    ifactioncount 20
+    {
+      ifrnd 16
+        ifcansee
+          ifcanshoottarget
+      {
+        move TANKSTOP geth
+        action ATANKSHOOTING
+        stopsound TANK_ROAM
+      }
+    }
+
+    ifrnd 16
+      move TANKFORWARD seekplayer
+  }
+  else
+    ifaction ATANKSHOOTING
+  {
+    ifactioncount 22
+    {
+      ifpdistg 8192
+      {
+        sound BOS1_ATTACK2
+        shoot MORTER
+      }
+      resetcount
+      move 0 action ATANKWAIT
+    }
+    else
+      ifactioncount 2
+    {
+      ifcansee
+      {
+        ifpdistl 16384
+        {
+          ifrnd 128
+          {
+            sound PISTOL_FIRE
+            shoot SHOTSPARK1
+          }
+        }
+        else
+          ifrnd 128
+        {
+          sound PRED_ATTACK
+          shoot FIRELASER
+        }
+      }
+      else
+      {
+        move TANKFORWARD seekplayer
+        action ATANKSPIN
+      }
+    }
+
+    ifrnd 16
+    {
+      stopsound TANK_ROAM
+      move TANKSTOP faceplayerslow
+    }
+  }
+  else
+    ifaction ATANKWAIT
+  {
+    ifactioncount 32
+    {
+      move TANKFORWARD seekplayer
+      action ATANKSPIN
+    }
+  }
+  else
+    ifaction ATANKDESTRUCT
+  {
+    ifactioncount 64
+      action ATANKDEAD
+    else
+      ifactioncount 56
+       sound LASERTRIP_ARMING
+     else
+       ifactioncount 48
+         sound LASERTRIP_ARMING
+     else
+       ifactioncount 32
+         sound LASERTRIP_ARMING
+     else
+       ifactioncount 16
+         sound LASERTRIP_ARMING
+     break
+  }
+  else
+    ifaction ATANKDEAD
+  {
+    addkills 1
+    hitradius 6144 TOUGH TOUGH TOUGH TOUGH
+    sound LASERTRIP_EXPLODE
+    debris SCRAP1 15
+    spawn EXPLOSION2
+    ifrnd 128 spawn PIGCOP
+    killit
+  }
+
+  ifhitweapon
+  {
+    ifdead
+      action ATANKDEAD
+    else
+    {
+      debris SCRAP1 1
+      ifaction ATANKSHOOTING break
+
+      ifrnd 192
+      {
+        move TANKSTOP geth
+        action ATANKSHOOTING
+        stopsound TANK_ROAM
+      }
+    }
+  }
+
+  ifpdistl 1280
+    ifhitspace
+      ifp pfacing
+        ifangdiffl 512
+          action ATANKDESTRUCT
+enda
+
+
+
+
+
+
+
+action ABOSS4WALK          0 4  5  1  30
+action ABOSS4DYING        40 9  1  1  20
+action ABOSS4ABOUTTOSHOOT 20 1  5  1  40
+action ABOSS4SHOOT        25 2  5  1  10
+action ABOSS4LAYIT        50 3  5  1  120
+action BOSS4FLINTCH       40 1  1  1  1
+action ABOSS4DEAD         49
+
+move BOSS4WALKVELS 128
+move BOSS4STOPPED
+
+ai AIBOSS4LAYEGGS ABOSS4WALK BOSS4WALKVELS randomangle geth
+ai AIBOSS4SHOOT ABOSS4ABOUTTOSHOOT BOSS4STOPPED faceplayer
+ai AIBOSS4DYING ABOSS4DYING BOSS4STOPPED faceplayer
+
+state boss4shootstate
+  ifaction ABOSS4ABOUTTOSHOOT
+    ifactioncount 3
+      action ABOSS4SHOOT
+
+  ifaction ABOSS4SHOOT
+  {
+    ifcount 48
+    {
+      ifrnd 4
+        ai AIBOSS4LAYEGGS
+    }
+    ifcount 26
+      ifrnd 32
+    {
+      ifrnd 128
+      {
+        sound SHORT_CIRCUIT
+        addphealth -2
+      }
+      else
+      {
+        sound DUKE_GRUNT
+        addphealth -1
+      }
+      palfrom 32 32 0 0
+    }
+  }
+
+ends
+
+state boss4layeggs
+  ifrnd 2
+    sound BOS4_ROAM
+
+  ifaction ABOSS4LAYIT
+  {
+    ifactioncount 3
+      ifcount 32
+    {
+      ai AIBOSS4LAYEGGS
+      ifrnd 32
+        move BOSS4WALKVELS furthestdir geth
+      spawn NEWBEASTHANG
+    }
+  }
+  else
+    ifcount 64
+      ifrnd 4
+  {
+    move 0
+
+    ifrnd 88
+    {
+      action ABOSS4LAYIT
+      sound BOS4_LAY
+    }
+    else
+      ifp palive
+        ifcansee
+    {
+      ai AIBOSS4SHOOT
+      sound BOS4_ATTACK
+    }
+  }
+
+ends
+
+state boss4dyingstate
+  ifaction ABOSS4DEAD
+    break
+  else
+    ifactioncount 9
+  {
+    iffloordistl 8
+      sound THUD
+
+    endofgame 52
+    action ABOSS4DEAD
+    cstat 0
+  }
+ends
+
+state checkboss4hitstate
+  ifrnd 2
+    spawn BLOODPOOL
+
+  ifdead
+  {
+    globalsound DUKE_TALKTOBOSSFALL
+
+    addkills 1
+    ai AIBOSS4DYING
+
+    sound BOS4_DYING
+    sound BOSS4_DEADSPEECH
+  }
+  else
+  {
+    soundonce BOS4_PAIN
+    debris SCRAP1 1
+    guts JIBS6 1
+
+    ifaction ABOSS4LAYIT
+      break
+
+    ifrnd 16
+    {
+      action BOSS4FLINTCH
+      move 0
+    }
+  }
+ends
+
+state boss4code
+
+  ifai 0
+    ai AIBOSS4LAYEGGS
+  else
+    ifaction BOSS4FLINTCH
+    {
+      ifactioncount 3
+        ai AIBOSS4LAYEGGS
+    }
+  else
+    ifai AIBOSS4LAYEGGS
+      state boss4layeggs
+  else
+    ifai AIBOSS4SHOOT
+      state boss4shootstate
+
+  ifai AIBOSS4DYING
+    state boss4dyingstate
+  else
+  {
+    ifhitweapon
+      state checkboss4hitstate
+    else
+      ifp palive
+        ifpdistl 1280
+      {
+        addphealth -1000
+        palfrom 63 63
+      }
+  }
+ends
+
+actor BOSS4STAYPUT BOSS4STRENGTH
+
+  fall
+  cactor BOSS4
+  spritepal 6
+  state boss4code
+  getlastpal
+
+enda
+
+actor BOSS4 BOSS4STRENGTH
+
+  fall
+  cactor BOSS4
+  spritepal 6
+  state boss4code
+  getlastpal
+
+enda
+
+action ANEWBEASTSTAND     0
+action ANEWBEASTWALKING   10  4  5  1  12
+action ANEWBEASTRUNNING   10  4  5  1  8
+action ANEWBEASTTHINK     0   2  5  1  40
+action ANEWBEASTSCRATCHING  30  3  5  1  20
+action ANEWBEASTDYING     72  8  1  1  15
+action ANEWBEASTFLINTCH   71  1  1  1  1
+action ANEWBEASTLYINGDEAD 79  1  1
+action ANEWBEASTSCREAM    50  2  5  1  40
+action ANEWBEASTJUMP      80  2  5  1  50
+action ANEWBEASTFALL      90  1  5
+action ANEWBEASTFROZEN    10  1  5
+
+action ANEWBEASTHANG      0  1  5
+useractor enemy NEWBEASTHANG NEWBEASTSTRENGTH
+  ifaction 0
+  {
+    action ANEWBEASTHANG
+    cstator 257
+
+    sizeat 40 40
+  }
+  else
+    ifhitweapon
+  {
+    cactor NEWBEAST
+    action ANEWBEASTSTAND
+    sound NEWBEAST_PAIN
+  }
+  else
+    ifspawnedby BOSS4
+      ifcount 200
+        ifrnd 1
+  {
+    cactor NEWBEAST
+    action ANEWBEASTSTAND
+    sound NEWBEAST_PAIN
+  }
+enda
+
+action ANEWBEASTHANGDEAD      -1  1  5
+useractor enemy NEWBEASTHANGDEAD TOUGH
+
+  ifaction 0
+  {
+    action ANEWBEASTHANGDEAD
+    sizeat 40 40
+    cstator 257
+  }
+  else
+    ifhitweapon
+  {
+    ifdead
+    {
+      state standard_jibs
+      spawn BLOODPOOL
+      sound SQUISHED
+      killit
+    }
+    else
+    {
+      guts JIBS6 1
+      sound SQUISHED
+    }
+  }
+enda
+
+move NEWBEASTWALKVEL 182
+move NEWBEASTRUNVEL 256
+move NEWBEASTJUMPVEL 264
+move NEWBEASTSTOP
+
+ai AINEWBEASTGETENEMY ANEWBEASTWALKING NEWBEASTWALKVEL seekplayer
+ai AINEWBEASTDODGE ANEWBEASTRUNNING NEWBEASTRUNVEL dodgebullet
+ai AINEWBEASTCHARGEENEMY ANEWBEASTRUNNING NEWBEASTRUNVEL seekplayer
+ai AINEWBEASTFLEENEMY ANEWBEASTWALKING NEWBEASTWALKVEL fleeenemy
+ai AINEWBEASTSCRATCHENEMY ANEWBEASTSCRATCHING NEWBEASTSTOP faceplayerslow
+ai AINEWBEASTJUMPENEMY ANEWBEASTJUMP NEWBEASTJUMPVEL jumptoplayer
+ai AINEWBEASTTHINK ANEWBEASTTHINK NEWBEASTSTOP
+// ai AINEWBEASTSHRUNK ANEWBEASTWALKING SHRUNKVELS fleeenemy
+ai AINEWBEASTGROW ANEWBEASTSTAND  NEWBEASTSTOP faceplayerslow
+ai AINEWBEASTDYING ANEWBEASTDYING NEWBEASTSTOP faceplayer
+ai AINEWBEASTSHOOT ANEWBEASTSCREAM NEWBEASTSTOP faceplayerslow
+ai AINEWBEASTFLINTCH ANEWBEASTFLINTCH NEWBEASTSTOP faceplayerslow
+
+
+state newbeastseekstate
+
+  ifactornotstayput
+  {
+    ifp palive
+      ifcansee
+        ifpdistl 1596
+    {
+      ai AINEWBEASTSCRATCHENEMY
+      break
+    }
+
+    ifai AINEWBEASTCHARGEENEMY
+    {
+      ifp palive
+        ifpdistl 1596
+          ifcansee
+      {
+        ai AINEWBEASTSCRATCHENEMY
+        break
+      }
+
+      ifrnd 1
+        ifpdistg 4096
+          ifp palive
+            ifcansee
+      {
+        ai AINEWBEASTSHOOT
+        break
+      }
+    }
+    else
+      ifpdistg 4096
+    {
+      ai AINEWBEASTCHARGEENEMY
+      break
+    }
+
+    iffloordistl 16
+    {
+      ifcount 32
+        ifrnd 16
+      {
+        ifceilingdistl 96 break
+        ai AINEWBEASTJUMPENEMY
+      }
+      break
+    }
+
+    ifrnd 4
+    {
+      ifnotmoving
+        operate
+    }
+    else
+      ifrnd 16
+        ifbulletnear
+    {
+      ifgapzl 128
+        ai AINEWBEASTDODGE
+      else
+        ifactornotstayput
+      {
+        ifrnd 128
+        {
+          ifceilingdistl 96 break
+          ai AINEWBEASTJUMPENEMY
+        }
+        else
+          ai AINEWBEASTDODGE
+      }
+    }
+  }
+  else
+  {
+    ifactioncount 16
+    {
+      ifp palive
+        ifpdistl 1596
+          ifcansee
+      {
+        ai AINEWBEASTSCRATCHENEMY
+        break
+      }
+    }
+    ifcount 16
+      ifrnd 32
+        move NEWBEASTWALKVEL randomangle geth
+  }
+
+ends
+
+/*
+state newbeastshrunkstate
+  ifcount SHRUNKDONECOUNT
+    ai AINEWBEASTGETENEMY
+  else
+    ifcount SHRUNKCOUNT
+      sizeto 48 40
+  else
+    state genericshrunkcode
+ends
+*/
+
+state newbeastfleestate
+  ifcount 8
+  {
+    ifrnd 64
+      ifpdistg 3500
+        ifp palive
+          ifcansee
+            ai AINEWBEASTSHOOT
+  }
+  else
+  {
+    iffloordistl 16
+    {
+      ifnotmoving
+        ai AINEWBEASTGETENEMY
+    }
+    else
+      ai AINEWBEASTGETENEMY
+    break
+  }
+ends
+
+state newbeastthinkstate
+
+  ifrnd 8
+    soundonce NEWBEAST_ROAM
+
+  ifactioncount 3
+  {
+    ifrnd 128
+    {
+      ifpdistg 3500
+        ifp palive
+          ifcansee
+            ai AINEWBEASTSHOOT
+    }
+    else
+      ai AINEWBEASTGETENEMY
+  }
+
+  ifrnd 16
+    ifbulletnear
+  {
+    ifgapzl 96
+      ai AINEWBEASTDODGE
+    else
+    {
+      ifrnd 128
+      {
+        ifceilingdistl 144 break
+        ai AINEWBEASTJUMPENEMY
+      }
+      else
+        ai AINEWBEASTDODGE
+    }
+  }
+ends
+
+state newbeastscratchstate
+  ifcount 20
+    ifrnd 8
+  {
+    ifcansee
+      ifpdistl 2048
+    {
+      ifrnd 128
+        ai AINEWBEASTFLEENEMY
+      break
+    }
+    ifrnd 80
+      ai AINEWBEASTTHINK
+    else
+      ai AINEWBEASTGETENEMY
+  }
+
+  ifactioncount 3
+  {
+    ifpdistg 1596
+      ai AINEWBEASTTHINK
+    else ifp palive ifcansee
+    {
+      palfrom 16 16
+      addphealth NEWBEASTSCRATCHAMOUNT
+      sound DUKE_GRUNT
+      resetactioncount
+      resetcount
+    }
+  }
+  else
+    ifcount 15
+      nullop
+  else
+    ifcount 14
+  {
+    ifpdistl 1596
+      soundonce NEWBEAST_ATTACK
+    else
+      soundonce NEWBEAST_ATTACKMISS
+  }
+ends
+
+state checknewbeasthit
+  spawn BLOOD
+/*
+  ifai AINEWBEASTSHRUNK
+  {
+    addkills 1
+    sound SQUISHED
+    state standard_jibs
+    killit
+  }
+*/
+  ifdead
+  {
+    ifwasweapon FREEZEBLAST
+    {
+      sound SOMETHINGFROZE
+      spritepal 1
+      move 0
+      action ANEWBEASTFROZEN
+      strength 0
+      break
+    }
+
+    ifwasweapon GROWSPARK
+    {
+      cstat 0
+      sound ACTOR_GROWING
+      ai AINEWBEASTGROW
+      break
+    }
+
+    addkills 1
+
+    ifwasweapon RPG
+    {
+      sound SQUISHED
+      state liz_body_jibs
+      state standard_jibs
+      killit
+    }
+    else
+      ifwasweapon RADIUSEXPLOSION
+    {
+      sound SQUISHED
+      state liz_body_jibs
+      state standard_jibs
+      killit
+    }
+    else
+    {
+      state rf
+      ai AINEWBEASTDYING
+      ifrnd 64
+        spawn BLOODPOOL
+    }
+    sound NEWBEAST_DYING
+  }
+  else
+  {
+    sound NEWBEAST_PAIN
+    ifwasweapon GROWSPARK
+      sound EXPANDERHIT
+/*
+//  The alien is immune to the shrinker
+    ifwasweapon SHRINKSPARK
+    {
+      sound ACTOR_SHRINKING
+      ai AINEWBEASTSHRUNK
+      break
+    }
+*/
+    state random_wall_jibs
+    ifrnd 32
+      ai AINEWBEASTFLINTCH
+    else
+      ifrnd 32
+        ifpdistg 3500
+          ifp palive
+            ifcansee
+              ai AINEWBEASTSHOOT
+  }
+ends
+
+state newbeastjumpstate
+  ifaction ANEWBEASTFALL
+  {
+    iffloordistl 16
+      ai AINEWBEASTGETENEMY
+  }
+  else
+    ifcount 32
+      action ANEWBEASTFALL
+ends
+
+state newbeastdyingstate
+  ifaction ANEWBEASTLYINGDEAD
+  {
+    strength 0
+    ifhitweapon
+      ifwasweapon RADIUSEXPLOSION
+    {
+      sound SQUISHED
+      state standard_jibs
+      killit
+    }
+    ifcount RESPAWNACTORTIME
+      ifrespawn
+    {
+      spawn TRANSPORTERSTAR
+      cstat 257
+      strength NEWBEASTSTRENGTH
+      ai AINEWBEASTGETENEMY
+    }
+  }
+  else
+    ifai AINEWBEASTDYING
+      ifactioncount 7
+  {
+    iffloordistl 8
+      sound THUD
+    move NEWBEASTSTOP
+    action ANEWBEASTLYINGDEAD
+  }
+ends
+
+state newbeastdodgestate
+  ifcount 13
+    ai AINEWBEASTGETENEMY
+ends
+
+useractor enemystayput NEWBEASTSTAYPUT NEWBEASTSTRENGTH ai AINEWBEASTGETENEMY cstator 257 cactor NEWBEAST enda
+useractor enemy NEWBEASTJUMP NEWBEASTSTRENGTH ai AINEWBEASTJUMPENEMY cstator 257 cactor NEWBEAST enda
+
+state newbeastcode
+  state checksquished
+  ifai 0
+  {
+    cstator 257
+    ai AINEWBEASTGETENEMY
+  }
+  else
+    ifaction ANEWBEASTLYINGDEAD
+  {
+    fall
+    state newbeastdyingstate
+    break
+  }
+  else
+    ifaction ANEWBEASTFROZEN
+  {
+    ifcount THAWTIME
+    {
+      ai AINEWBEASTGETENEMY
+      spritepal 0
+    }
+    else
+      ifcount FROZENDRIPTIME
+    {
+      ifactioncount 26
+      {
+        spawn WATERDRIP
+        resetactioncount
+      }
+    }
+
+    ifhitweapon
+    {
+      ifwasweapon FREEZEBLAST
+      {
+        strength 0
+        break
+      }
+      addkills 1
+
+      ifrnd 84
+        spawn BLOODPOOL
+      lotsofglass 30
+      sound GLASS_BREAKING
+      killit
+    }
+    ifp pfacing
+      ifpdistl FROZENQUICKKICKDIST
+        pkick
+    break
+  }
+  else
+    ifai AINEWBEASTJUMPENEMY
+      state newbeastjumpstate
+  else
+  {
+    fall
+    ifai AINEWBEASTGETENEMY
+      state newbeastseekstate
+    else
+      ifai AINEWBEASTCHARGEENEMY
+        state newbeastseekstate
+    else
+      ifai AINEWBEASTFLINTCH
+    {
+      ifcount 8
+        ai AINEWBEASTGETENEMY
+    }
+
+    else
+      ifai AINEWBEASTDODGE
+        state newbeastdodgestate
+    else
+      ifai AINEWBEASTSCRATCHENEMY
+        state newbeastscratchstate
+    else
+      ifai AINEWBEASTFLEENEMY
+        state newbeastfleestate
+    else
+      ifai AINEWBEASTTHINK
+        state newbeastthinkstate
+/*
+    else
+      ifai AINEWBEASTSHRUNK
+        state newbeastshrunkstate
+*/
+    else
+      ifai AINEWBEASTGROW
+        state genericgrowcode
+    else
+      ifai AINEWBEASTDYING
+        state newbeastdyingstate
+    else
+      ifai AINEWBEASTSHOOT
+    {
+      ifp pshrunk
+        ai AINEWBEASTGETENEMY
+      else
+        ifcount 26
+          ai AINEWBEASTGETENEMY
+      else
+        ifcount 25
+          shoot SHRINKER
+      else
+      {
+        ifcount 5
+          nullop
+        else
+          ifcount 4
+            sound NEWBEAST_SPIT
+      }
+    }
+  }
+
+  ifhitweapon
+    state checknewbeasthit
+ends
+
+
+useractor enemy NEWBEAST NEWBEASTSTRENGTH
+  fall
+  ifaction 0
+  {
+    cstator 257
+    sizeat 40 40
+    ai AINEWBEASTDODGE
+  }
+  ifaction ANEWBEASTFROZEN
+    state newbeastcode
+  else
+  {
+    spritepal 6
+    state newbeastcode
+    ifaction ANEWBEASTFROZEN
+      break
+    getlastpal
+  }
+enda
+
+

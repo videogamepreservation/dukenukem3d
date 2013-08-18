@@ -1,0 +1,60 @@
+
+Apogee Sound System MIDI notes:
+-------------------------------
+
+FM Midi :
+
+On OPL2 cards 9 voices are available.  OPL3 cards have 18 voices.  Melodic
+mode is used for music.  For percussion (channel 10), each key is assigned
+a timbre to play at a pitch specified by the patch.  This method was chosen
+based on the advice of Bobby Prince, Rob Wallace, George Sanger, and Lee
+Jackson, all of whom felt the 11 voice mode was too restricting for
+musicians.
+
+Channels 1-16 are now supported.
+
+Controllers supported
+
+6   data entry msb     |
+38  data entry lsb     | - Only on Set Pitch Bend Range (RPN 0, 0)
+96  data increment     |
+97  data decrement     |
+7   channel volume
+10  pan (balance)
+121 reset all controllers
+123 all notes off
+
+
+AWE32 :
+
+All controllers supported by API.
+
+
+Gravis Ultrasound:
+
+1   modulation wheel
+6   data entry msb     |
+38  data entry lsb     | - Only on Set Pitch Bend Range (RPN 0, 0)
+96  data increment     |
+97  data decrement     |
+7   channel volume
+39  volume lsb ignored
+10  pan (balance)
+11  channel expression (volume)
+43  expression lsb ignored
+64  sustain (damper pedal)
+100 set registered parameter number
+101 set registered parameter number
+121 reset all controllers
+
+120 all sounds off     |
+123 all notes off      |
+124 omni off           | - Perform all notes off
+125 omni on            |
+126 mono               |
+127 mono               |
+
+
+General MIDI (all other cards):
+
+All controllers sent.  Support depends on the card.

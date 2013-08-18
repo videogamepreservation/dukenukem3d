@@ -1,0 +1,37 @@
+PM is a quick and dirty file player for DOS using the Apogee Sound System.
+
+If you type PM with no arguments you'll get the following information:
+
+PM Version 1.10 by Jim Dos‚
+Usage: PM [ midifile ] CARD=[ card number ] MPU=[ port address in hex ]
+          TIMBRE=[ timbre file ]
+
+   card number =
+      0 : General Midi
+      1 : Sound Canvas
+      2 : Awe 32
+      3 : WaveBlaster
+      4 : SoundBlaster
+      5 : Pro AudioSpectrum
+      6 : Sound Man 16
+      7 : Adlib
+      8 : Ensoniq SoundScape
+      9 : Gravis UltraSound
+
+So, if you want to play FANFARE.MID on a Sound Canvas at port 330h, type:
+   PM Fanfare.mid card=1 mpu=330
+
+The TIMBRE parameter tells PM to use the MAKETMB generated timbre file
+specified.  This is useful when you're testing new timbres and want to
+see how they sound.
+
+You can also set an environment variable that has the card settings you
+want to use by default and PM will use it.  Just type "SET PM=<card>,<mpu>"
+where <card> is the card number and <mpu> is the address of the MIDI card
+(if any).  So for a Sound Canvas at port 330h, you would use "SET PM=1,330".
+Then you can just type "PM Fanfare.mid" on the command line to play your
+song without worrying about the card and mpu parameters.
+
+If you have any problems or questions, call me at (214)-271-1365 ext. 221.
+
+Jim Dos‚
